@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>备课提交审核看板 v2 — 2026年6月第三周</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --primary: #2563eb; --primary-light: #e0e7ff;
+  --success: #16a34a; --success-light: #dcfce7;
+  --warning: #f59e0b; --warning-light: #fef3c7;
+  --danger: #dc2626; --danger-light: #fee2e2;
+  --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+  --gray-300: #d1d5db; --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827;
+  --radius: 12px; --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f1f5f9; color: var(--gray-900); line-height: 1.6;
+}
+
+/* ===== 头部 ===== */
+.header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  color: #fff; padding: 20px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 20px; font-weight: 700; }
+.header .subtitle { font-size: 12px; opacity: .85; margin-top: 2px; }
+.header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; transition: all .15s; text-decoration: none; font-family: inherit;
+}
+.btn-primary { background: #fff; color: var(--primary); }
+.btn-primary:hover { background: #e0e7ff; }
+.btn-outline { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+.btn-outline:hover { background: rgba(255,255,255,.25); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { opacity: .9; }
+.btn-warning { background: var(--warning); color: #fff; }
+.btn-warning:hover { opacity: .9; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+input[type="file"] { display: none; }
+
+/* ===== 导航标签 ===== */
+.tabs {
+  display: flex; gap: 0; border-bottom: 2px solid var(--gray-200);
+  background: #fff; padding: 0 24px;
+}
+.tab {
+  padding: 12px 24px; font-size: 14px; font-weight: 600; color: var(--gray-500);
+  cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent;
+  margin-bottom: -2px; transition: all .15s; font-family: inherit;
+}
+.tab:hover { color: var(--gray-900); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.container { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== 卡片 ===== */
+.cards { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.card {
+  background: #fff; border-radius: var(--radius); padding: 18px;
+  box-shadow: var(--shadow); border-left: 4px solid var(--primary);
+}
+.card.blue { border-left-color: var(--primary); }
+.card.green { border-left-color: var(--success); }
+.card.orange { border-left-color: var(--warning); }
+.card.red { border-left-color: var(--danger); }
+.card .label { font-size: 12px; color: var(--gray-500); margin-bottom: 4px; }
+.card .value { font-size: 26px; font-weight: 700; }
+.card .sub { font-size: 11px; color: var(--gray-500); margin-top: 4px; }
+
+/* ===== 面板 ===== */
+.panel {
+  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+  margin-bottom: 20px; overflow: hidden;
+}
+.panel-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--gray-200);
+  font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;
+}
+.panel-body { padding: 18px; }
+
+/* ===== 表格 ===== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--gray-50); padding: 9px 10px; text-align: left; font-weight: 600; color: var(--gray-700);
+  border-bottom: 2px solid var(--gray-200); white-space: nowrap; cursor: pointer; user-select: none; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--gray-100); }
+tr:hover { background: #f8fafc; }
+tr.edited { background: #fef3c7 !important; }
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.badge-success { background: var(--success-light); color: #166534; }
+.badge-warning { background: var(--warning-light); color: #92400e; }
+.badge-danger { background: var(--danger-light); color: #991b1b; }
+.badge-gray { background: var(--gray-100); color: var(--gray-500); }
+
+/* ===== 工具栏 ===== */
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+.toolbar input, .toolbar select {
+  padding: 7px 12px; border: 1px solid var(--gray-300); border-radius: 8px;
+  font-size: 13px; outline: none; font-family: inherit;
+}
+.toolbar input:focus, .toolbar select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.toolbar input { min-width: 180px; }
+.editable-cell { cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: background .15s; }
+.editable-cell:hover { background: var(--primary-light); }
+.editable-cell select { font-size: 12px; padding: 2px 6px; border: 1px solid var(--gray-300); border-radius: 4px; font-family: inherit; }
+
+/* ===== 图表 ===== */
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+.chart-box { position: relative; height: 300px; }
+.chart-box canvas { width: 100% !important; height: 100% !important; }
+.chart-full { height: 340px; }
+
+/* ===== 范画图库 ===== */
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.gallery-card {
+  background: #fff; border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow); border: 1px solid var(--gray-200); transition: transform .15s;
+}
+.gallery-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.gallery-card img {
+  width: 100%; height: 200px; object-fit: cover; display: block;
+}
+.gallery-info { padding: 10px 12px; }
+.gallery-info .teacher { font-weight: 700; font-size: 14px; }
+.gallery-info .meta { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+.gallery-info .meta span { margin-right: 8px; }
+
+/* ===== 上传区 ===== */
+.upload-zone {
+  border: 2px dashed var(--gray-300); border-radius: var(--radius);
+  padding: 40px; text-align: center; cursor: pointer; transition: all .2s;
+  margin-bottom: 16px;
+}
+.upload-zone:hover { border-color: var(--primary); background: var(--primary-light); }
+.upload-zone.drag-over { border-color: var(--primary); background: var(--primary-light); }
+.upload-zone .icon { font-size: 40px; margin-bottom: 8px; }
+.upload-zone .text { font-size: 14px; color: var(--gray-500); }
+.upload-zone .text strong { color: var(--primary); }
+.upload-history { font-size: 12px; color: var(--gray-500); margin-top: 10px; }
+
+/* ===== 编辑指示器 ===== */
+.edit-indicator { font-size: 11px; color: var(--warning); margin-left: 8px; }
+.save-bar {
+  display: none; background: var(--warning-light); border: 1px solid var(--warning);
+  border-radius: var(--radius); padding: 12px 18px; margin-bottom: 14px;
+  justify-content: space-between; align-items: center;
+}
+.save-bar.show { display: flex; }
+
+/* ===== 模态 ===== */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,.6); z-index: 200; justify-content: center; align-items: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #fff; border-radius: var(--radius); max-width: 90vw; max-height: 85vh;
+  overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.modal-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--gray-200);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header h3 { font-size: 16px; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray-500); padding: 4px 8px; }
+.modal-body { padding: 20px; }
+.modal-body img { max-width: 100%; max-height: 70vh; border-radius: 8px; }
+
+/* ===== 页脚 ===== */
+.footer {
+  text-align: center; padding: 16px; color: var(--gray-500); font-size: 12px;
+  border-top: 1px solid var(--gray-200); margin-top: 8px;
+}
+
+/* ===== 打印 ===== */
+@media print {
+  body { background: #fff; }
+  .header { background: #1e3a5f !important; -webkit-print-color-adjust: exact; position: static; }
+  .btn, .tabs, .upload-zone, .save-bar, .edit-indicator, .toolbar { display: none !important; }
+  .tab-content { display: block !important; }
+  .panel { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 头部 ===== -->
+<div class="header">
+  <div>
+    <h1>🎨 备课提交审核看板 v2</h1>
+    <div class="subtitle" id="headerDate">2026年6月第三周（6.15—6.21） | 数据更新：2026-06-16 15:30</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" onclick="exportExcel()">📥 下载Excel</button>
+    <button class="btn btn-outline" onclick="window.print()">🖨️ 打印/导出PDF</button>
+  </div>
+</div>
+
+<!-- ===== 标签导航 ===== -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('overview')">📊 总览看板</button>
+  <button class="tab" onclick="switchTab('courses')">📚 课程详情 & 范画</button>
+  <button class="tab" onclick="switchTab('teachers')">👩‍🏫 老师名单</button>
+  <button class="tab" onclick="switchTab('trend')">📈 累计趋势</button>
+  <button class="tab" onclick="switchTab('upload')">📤 上传数据</button>
+</div>
+
+<div class="container">
+
+<!-- ==================== 标签1: 总览看板 ==================== -->
+<div class="tab-content active" id="tab-overview">
+
+<!-- 保存提示条 -->
+<div class="save-bar" id="saveBar">
+  <span>⚠️ 你有未保存的编辑内容</span>
+  <div>
+    <button class="btn btn-warning btn-sm" onclick="saveEdits()">💾 保存修改</button>
+    <button class="btn btn-sm" style="background:var(--gray-200);margin-left:8px;" onclick="discardEdits()">撤销</button>
+  </div>
+</div>
+
+<!-- 概览卡片 -->
+<div class="cards" id="overviewCards">
+  <div class="card blue">
+    <div class="label">总排课记录</div>
+    <div class="value" id="cardTotal">1,562</div>
+    <div class="sub">涵盖 8 门课程</div>
+  </div>
+  <div class="card green">
+    <div class="label">免检老师</div>
+    <div class="value" id="cardExempt">21</div>
+    <div class="sub">2026.Q1结课续费率达标</div>
+  </div>
+  <div class="card orange">
+    <div class="label">应提交记录</div>
+    <div class="value" id="cardNeed">1,465</div>
+    <div class="sub">扣除免检后</div>
+  </div>
+  <div class="card red">
+    <div class="label">范画已提交</div>
+    <div class="value" id="cardFanhua">13</div>
+    <div class="sub" id="cardFanhuaRate">提交率 0.9%</div>
+  </div>
+</div>
+
+<!-- 学区汇总表 -->
+<div class="panel">
+  <div class="panel-header">
+    <span>🏫 学区分组统计</span>
+    <span style="font-size:12px;color:var(--gray-500);">截止周日 23:59 | 点击表头排序</span>
+  </div>
+  <div class="panel-body">
+    <div class="table-wrap">
+      <table id="districtTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('districtTable',0)">学区 ↕</th>
+            <th onclick="sortTable('districtTable',1)">总排课 ↕</th>
+            <th onclick="sortTable('districtTable',2)">免检 ↕</th>
+            <th onclick="sortTable('districtTable',3)">应提交 ↕</th>
+            <th onclick="sortTable('districtTable',4)">文档提交 ↕</th>
+            <th onclick="sortTable('districtTable',5)">文档率 ↕</th>
+            <th onclick="sortTable('districtTable',6)">范画提交 ↕</th>
+            <th onclick="sortTable('districtTable',7)">范画率 ↕</th>
+            <th onclick="sortTable('districtTable',8)">双项完成 ↕</th>
+          </tr>
+        </thead>
+        <tbody id="districtBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 图表 -->
+<div class="chart-row">
+  <div class="panel">
+    <div class="panel-header">📊 学区提交率对比（范画）</div>
+    <div class="panel-body"><div class="chart-box"><canvas id="chartDistrict"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">📊 课程提交情况对比</div>
+    <div class="panel-body"><div class="chart-box"><canvas id="chartCourse"></canvas></div></div>
+  </div>
+</div>
+
+</div><!-- /tab-overview -->
+
+<!-- ==================== 标签2: 课程详情 & 范画 ==================== -->
+<div class="tab-content" id="tab-courses">
+  <div class="toolbar">
+    <input type="text" id="courseSearch" placeholder="🔍 搜索课程名..." oninput="filterCourseTable()">
+    <span style="font-size:12px;color:var(--gray-500);">点击课程行查看该课老师提交的范画</span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📚 课程提交明细 <span style="font-size:12px;color:var(--gray-500);">点击行查看范画</span></div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>课程</th><th>总排课</th><th>免检</th><th>应提交</th><th>文档</th><th>文档率</th><th>范画</th><th>范画率</th><th>提交进度</th></tr>
+          </thead>
+          <tbody id="courseDetailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 范画图库 -->
+  <div class="panel" id="galleryPanel">
+    <div class="panel-header" id="galleryTitle">🖼️ 请点击上方课程查看范画</div>
+    <div class="panel-body">
+      <div class="gallery" id="galleryGrid"></div>
+      <div id="galleryEmpty" style="text-align:center;padding:40px;color:var(--gray-500);">
+        点击上方任意课程行，即可查看该课老师提交的范画作品
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-courses -->
+
+<!-- ==================== 标签3: 老师名单（可编辑） ==================== -->
+<div class="tab-content" id="tab-teachers">
+  <div class="toolbar">
+    <input type="text" id="teacherSearch" placeholder="🔍 搜索老师艺名/真名..." oninput="renderTeacherTable()">
+    <select id="teacherDistrictFilter" onchange="renderTeacherTable()">
+      <option value="">全部学区</option>
+      <option>教学一区</option><option>教学二区</option><option>教学三区</option>
+      <option>C区</option><option>DEMO特战队</option>
+    </select>
+    <select id="teacherCourseFilter" onchange="renderTeacherTable()">
+      <option value="">全部课程</option>
+    </select>
+    <select id="teacherStatusFilter" onchange="renderTeacherTable()">
+      <option value="">全部状态</option>
+      <option>已提交</option><option>部分提交</option><option>未提交</option><option>免检</option>
+    </select>
+    <span style="font-size:11px;color:var(--gray-500);margin-left:auto;">💡 点击"文档/范画"列可编辑提交状态</span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">👩‍🏫 老师提交名单 <span class="edit-indicator" id="editBadge" style="display:none;">(已修改)</span></div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table id="teacherTable">
+          <thead>
+            <tr>
+              <th>序号</th><th>老师艺名</th><th>真实姓名</th><th>学区</th><th>课程</th>
+              <th>备课文档</th><th>提交范画</th><th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="teacherBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-teachers -->
+
+<!-- ==================== 标签4: 累计趋势 ==================== -->
+<div class="tab-content" id="tab-trend">
+  <div class="toolbar">
+    <select id="trendPeriod" onchange="renderTrendChart()">
+      <option value="weekly">按周累计</option>
+      <option value="monthly">按月累计</option>
+      <option value="yearly">按年累计</option>
+    </select>
+    <span style="font-size:12px;color:var(--gray-500);">
+      💡 上传多周数据后，此处展示周/月/年备课率变化趋势。当前为单周演示数据。
+    </span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📈 备课率累计趋势</div>
+    <div class="panel-body"><div class="chart-box chart-full"><canvas id="chartTrend"></canvas></div></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="panel">
+      <div class="panel-header">📊 各学区周趋势对比</div>
+      <div class="panel-body"><div class="chart-box"><canvas id="chartDistrictTrend"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">📊 各课程累计提交率</div>
+      <div class="panel-body"><div class="chart-box"><canvas id="chartCourseTrend"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📋 累计数据明细</div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>周期</th><th>总排课</th><th>应提交</th><th>范画提交</th><th>范画率</th><th>文档提交</th><th>文档率</th><th>双项完成</th><th>双项率</th></tr>
+          </thead>
+          <tbody id="trendTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div><!-- /tab-trend -->
+
+<!-- ==================== 标签5: 上传数据 ==================== -->
+<div class="tab-content" id="tab-upload">
+  <div class="panel">
+    <div class="panel-header">📤 上传新周备课数据</div>
+    <div class="panel-body">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📁</div>
+        <div class="text">拖拽Excel文件到此处，或 <strong>点击选择文件</strong></div>
+        <div style="font-size:12px;color:var(--gray-500);margin-top:6px;">支持 .xlsx / .xls 格式</div>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(this.files)">
+      <div class="upload-history" id="uploadHistory">
+        <strong>已上传周期：</strong>
+        <span id="historyList">2026年6月第三周（6.15-6.21）— 当前</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📋 上传说明</div>
+    <div class="panel-body" style="font-size:13px;line-height:2;">
+      <p><strong>1.</strong> 从飞书多维表格或BI系统导出备课明细Excel</p>
+      <p><strong>2.</strong> 确保Excel包含以下列：排课ID、老师ID、工号、真名、艺名、学区、小组、课程类型、课表名、课程名、上课日期、星期、上课时段、备课文档(O列)、提交范画(P列)</p>
+      <p><strong>3.</strong> 拖拽文件到上方区域或点击上传</p>
+      <p><strong>4.</strong> 系统自动解析并累计到趋势数据中</p>
+      <p style="color:var(--gray-500);margin-top:8px;">⚠️ 上传的数据仅存储在浏览器本地，不会上传到任何服务器。清除浏览器缓存会丢失累计数据，建议定期导出Excel备份。</p>
+    </div>
+  </div>
+</div><!-- /tab-upload -->
+
+<div class="footer">
+  备课提交审核系统 v2 · 数据存储在浏览器本地 · 自动生成于 2026-06-16
+</div>
+
+</div><!-- /container -->
+
+<!-- 范画大图模态 -->
+<div class="modal-overlay" id="imageModal" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="modalTitle">范画预览</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ====== 核心数据 ======
+const teacherData = [
+  {id:1, name:"童言", real:"蔡雲霏", district:"教学一区", course:"棋盘上的迁徙之旅", doc:true, art:true, exempt:false},
+  {id:2, name:"西柠", real:"杨毛娜", district:"教学一区", course:"棋盘上的迁徙之旅", doc:true, art:true, exempt:false},
+  {id:3, name:"知夏", real:"刘涛", district:"教学一区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:4, name:"辣辣子", real:"赵娜", district:"教学一区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:5, name:"遥愈", real:"黄晟瑜", district:"教学一区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:6, name:"粟米", real:"白雪", district:"教学一区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:7, name:"南茜", real:"李静", district:"教学一区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:8, name:"PuDing", real:"刘聪", district:"教学二区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:9, name:"小圆", real:"凌敏", district:"教学三区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:10, name:"格子", real:"郭兰平", district:"教学三区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:11, name:"夏天老师", real:"谢阳", district:"教学三区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:12, name:"米雪", real:"丁珍晖", district:"教学三区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+  {id:13, name:"小璐老师", real:"齐一璐", district:"C区", course:"棋盘上的迁徙之旅", doc:false, art:true, exempt:false},
+];
+
+const courses = [
+  {name:"棋盘上的迁徙之旅", total:242, exempt:20, submit:222, doc:2, art:13},
+  {name:"初识梦境", total:237, exempt:12, submit:225, doc:0, art:0},
+  {name:"烹饪！鲜美肉食", total:249, exempt:18, submit:231, doc:0, art:0},
+  {name:"陈旧的报纸", total:238, exempt:18, submit:220, doc:0, art:0},
+  {name:"哇！龙出没", total:214, exempt:16, submit:198, doc:0, art:0},
+  {name:"神笔绘古今", total:173, exempt:7, submit:166, doc:0, art:0},
+  {name:"裤子的磨损地图", total:115, exempt:2, submit:113, doc:0, art:0},
+  {name:"器间绘影", total:94, exempt:4, submit:90, doc:0, art:0},
+];
+
+const districts = [
+  {name:"教学一区", total:413, exempt:27, submit:386, doc:2, art:7, both:2},
+  {name:"教学二区", total:487, exempt:17, submit:470, doc:0, art:1, both:0},
+  {name:"教学三区", total:460, exempt:52, submit:408, doc:0, art:4, both:0},
+  {name:"C区", total:181, exempt:0, submit:181, doc:0, art:1, both:0},
+  {name:"DEMO特战队", total:21, exempt:1, submit:20, doc:0, art:0, both:0},
+];
+
+// 范画图片映射：老师 -> 图片文件
+const artImages = {
+  "童言": { doc: "images/O33_image15.png", art: "images/P42_image13.jpeg" },
+  "西柠": { doc: "images/O34_image14.png", art: "images/P41_image12.png" },
+  "知夏": { art: "images/P30_image7.jpeg" },
+  "辣辣子": { art: "images/P31_image3.jpeg" },
+  "遥愈": { art: "images/P32_image2.jpeg" },
+  "粟米": { art: "images/P33_image1.jpeg" },
+  "南茜": { art: "images/P34_image4.jpeg" },
+  "PuDing": { art: "images/P35_image8.jpeg" },
+  "小圆": { art: "images/P36_image6.jpeg" },
+  "格子": { art: "images/P37_image5.jpeg" },
+  "夏天老师": { art: "images/P38_image9.jpeg" },
+  "米雪": { art: "images/P39_image10.jpeg" },
+  "小璐老师": { art: "images/P40_image11.jpeg" },
+};
+
+// 累计趋势模拟数据（单周演示，上传多周后自动累计）
+let trendData = [
+  {period:"6月第三周 (6.15-6.21)", total:1562, need:1465, fanhua:13, doc:2, both:2}
+];
+
+// 编辑追踪
+let editedRecords = {};
+let selectedCourse = null;
+
+// ====== 初始化 ======
+document.addEventListener('DOMContentLoaded', () => {
+  renderDistrictTable();
+  renderCourseDetailTable();
+  renderTeacherTable();
+  renderTrendChart();
+  renderDistrictChart();
+  renderCourseChart();
+  setupDragDrop();
+  populateFilters();
+  loadFromStorage();
+});
+
+// ====== 本地存储 ======
+function saveToStorage() {
+  try {
+    localStorage.setItem('beike_trendData', JSON.stringify(trendData));
+    localStorage.setItem('beike_editedRecords', JSON.stringify(editedRecords));
+    localStorage.setItem('beike_teacherData', JSON.stringify(teacherData));
+  } catch(e) {}
+}
+function loadFromStorage() {
+  try {
+    const td = localStorage.getItem('beike_trendData');
+    if (td) trendData = JSON.parse(td);
+    const er = localStorage.getItem('beike_editedRecords');
+    if (er) editedRecords = JSON.parse(er);
+  } catch(e) {}
+  renderTrendChart();
+}
+
+// ====== 标签切换 ======
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if (name === 'trend') renderTrendChart();
+}
+
+// ====== 学区表 ======
+function renderDistrictTable() {
+  const tbody = document.getElementById('districtBody');
+  tbody.innerHTML = districts.map(d => {
+    const ar = d.submit>0 ? (d.art/d.submit*100).toFixed(1) : '0.0';
+    const dr = d.submit>0 ? (d.doc/d.submit*100).toFixed(1) : '0.0';
+    const br = d.submit>0 ? (d.both/d.submit*100).toFixed(1) : '0.0';
+    return `<tr>
+      <td><strong>${d.name}</strong></td><td>${d.total}</td><td>${d.exempt}</td><td>${d.submit}</td>
+      <td>${d.doc}</td><td>${dr}%</td><td>${d.art}</td><td>${ar}%</td><td>${d.both}</td></tr>`;
+  }).join('');
+}
+
+// ====== 课程明细表（可点击） ======
+function renderCourseDetailTable(filterText) {
+  const tbody = document.getElementById('courseDetailBody');
+  const filtered = filterText ? courses.filter(c => c.name.includes(filterText)) : courses;
+  tbody.innerHTML = filtered.map(c => {
+    const ar = c.submit>0 ? (c.art/c.submit*100).toFixed(1) : '0.0';
+    const dr = c.submit>0 ? (c.doc/c.submit*100).toFixed(1) : '0.0';
+    const pct = c.submit>0 ? Math.max(c.art/c.submit*100, 1) : 0;
+    const cls = pct >= 50 ? 'high' : pct >= 10 ? 'mid' : 'low';
+    const isSelected = selectedCourse === c.name;
+    return `<tr onclick="selectCourse('${c.name}')" style="cursor:pointer;${isSelected?'background:#e0e7ff;':''}">
+      <td><strong>${c.name}</strong> ${isSelected?'👁️':''}</td>
+      <td>${c.total}</td><td>${c.exempt}</td><td>${c.submit}</td>
+      <td>${c.doc}</td><td>${dr}%</td><td>${c.art}</td><td>${ar}%</td>
+      <td style="min-width:140px">
+        <span style="font-size:11px;color:var(--gray-500)">${c.art}/${c.submit}</span>
+        <div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>
+      </td></tr>`;
+  }).join('');
+}
+
+function filterCourseTable() {
+  const t = document.getElementById('courseSearch').value;
+  renderCourseDetailTable(t);
+}
+
+function selectCourse(courseName) {
+  selectedCourse = courseName;
+  renderCourseDetailTable(document.getElementById('courseSearch').value);
+  renderGallery(courseName);
+}
+
+function renderGallery(courseName) {
+  const grid = document.getElementById('galleryGrid');
+  const empty = document.getElementById('galleryEmpty');
+  const title = document.getElementById('galleryTitle');
+
+  const courseTeachers = teacherData.filter(t => t.course === courseName && (t.doc || t.art));
+  if (courseTeachers.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    empty.textContent = `「${courseName}」暂无老师提交范画`;
+    title.textContent = `🖼️ ${courseName} — 暂无范画`;
+    return;
+  }
+
+  empty.style.display = 'none';
+  title.textContent = `🖼️ ${courseName} — ${courseTeachers.length}位老师提交`;
+
+  grid.innerHTML = courseTeachers.map(t => {
+    const imgs = artImages[t.name] || {};
+    const artImg = imgs.art || '';
+    const docImg = imgs.doc || '';
+    const hasArt = artImg && t.art;
+    const hasDoc = docImg && t.doc;
+
+    let imgHtml = '';
+    if (hasArt) {
+      imgHtml = `<img src="${artImg}" alt="${t.name}的范画" onclick="openImage('${artImg}','${t.name} — 范画')" style="cursor:pointer;">`;
+    } else if (hasDoc) {
+      imgHtml = `<img src="${docImg}" alt="${t.name}的备课文档" onclick="openImage('${docImg}','${t.name} — 备课文档')" style="cursor:pointer;">`;
+    } else {
+      imgHtml = `<div style="height:200px;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-500);">📷 图片未提取</div>`;
+    }
+
+    return `<div class="gallery-card">
+      ${imgHtml}
+      <div class="gallery-info">
+        <div class="teacher">${t.name} <span style="font-size:12px;color:var(--gray-500);">${t.real}</span></div>
+        <div class="meta">
+          <span>🏫 ${t.district}</span>
+          ${t.doc ? '<span class="badge badge-success">📄 文档</span>' : ''}
+          ${t.art ? '<span class="badge badge-success">🎨 范画</span>' : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ====== 老师表（可编辑） ======
+function renderTeacherTable() {
+  const search = document.getElementById('teacherSearch').value.toLowerCase();
+  const district = document.getElementById('teacherDistrictFilter').value;
+  const course = document.getElementById('teacherCourseFilter').value;
+  const status = document.getElementById('teacherStatusFilter').value;
+
+  let filtered = teacherData.filter(t => {
+    if (search && !t.name.toLowerCase().includes(search) && !t.real.includes(search)) return false;
+    if (district && t.district !== district) return false;
+    if (course && t.course !== course) return false;
+    if (status) {
+      const s = t.exempt ? '免检' : (t.doc && t.art ? '已提交' : (t.doc || t.art ? '部分提交' : '未提交'));
+      if (s !== status) return false;
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById('teacherBody');
+  tbody.innerHTML = filtered.map((t, i) => {
+    const docEdited = editedRecords[`${t.name}_doc`];
+    const artEdited = editedRecords[`${t.name}_art`];
+    const docVal = docEdited !== undefined ? docEdited : t.doc;
+    const artVal = artEdited !== undefined ? artEdited : t.art;
+    const isEdited = docEdited !== undefined || artEdited !== undefined;
+
+    const statusBadge = t.exempt
+      ? '<span class="badge badge-gray">免检</span>'
+      : (docVal && artVal ? '<span class="badge badge-success">已提交</span>' : (docVal || artVal ? '<span class="badge badge-warning">部分提交</span>' : '<span class="badge badge-danger">未提交</span>'));
+
+    return `<tr class="${isEdited ? 'edited' : ''}">
+      <td>${i+1}</td>
+      <td><strong>${t.name}</strong></td>
+      <td>${t.real}</td>
+      <td>${t.district}</td>
+      <td>${t.course}</td>
+      <td class="editable-cell" onclick="event.stopPropagation();editCell('${t.name}','doc',${t.exempt})">
+        ${t.exempt ? '<span class="badge badge-gray">免检</span>' :
+          `<select onchange="updateEdit('${t.name}','doc',this.value==='true')" style="font-size:12px;">
+            <option value="true" ${docVal?'selected':''}>✓ 已提交</option>
+            <option value="false" ${!docVal?'selected':''}>✗ 未提交</option>
+          </select>`}
+      </td>
+      <td class="editable-cell" onclick="event.stopPropagation();editCell('${t.name}','art',${t.exempt})">
+        ${t.exempt ? '<span class="badge badge-gray">免检</span>' :
+          `<select onchange="updateEdit('${t.name}','art',this.value==='true')" style="font-size:12px;">
+            <option value="true" ${artVal?'selected':''}>✓ 已提交</option>
+            <option value="false" ${!artVal?'selected':''}>✗ 未提交</option>
+          </select>`}
+      </td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  // 更新编辑指示器
+  const hasEdits = Object.keys(editedRecords).length > 0;
+  document.getElementById('editBadge').style.display = hasEdits ? 'inline' : 'none';
+  document.getElementById('saveBar').classList.toggle('show', hasEdits);
+}
+
+function editCell(name, field, exempt) {
+  if (exempt) return;
+  // 点击即触发select，已内置在HTML中
+}
+
+function updateEdit(name, field, value) {
+  const key = `${name}_${field}`;
+  const t = teacherData.find(t => t.name === name);
+  if (!t) return;
+  if (t[field] === value) {
+    delete editedRecords[key];
+  } else {
+    editedRecords[key] = value;
+  }
+  // 更新teacherData
+  t[field] = value;
+  saveToStorage();
+  renderTeacherTable();
+  recalcStats();
+}
+
+function saveEdits() {
+  alert('✅ 修改已保存到浏览器本地存储！刷新页面后仍然保留。');
+  saveToStorage();
+}
+function discardEdits() {
+  if (confirm('确定要撤销所有未保存的编辑吗？')) {
+    editedRecords = {};
+    teacherData.forEach(t => {
+      t.doc = t._originalDoc !== undefined ? t._originalDoc : t.doc;
+      t.art = t._originalArt !== undefined ? t._originalArt : t.art;
+    });
+    saveToStorage();
+    renderTeacherTable();
+    recalcStats();
+  }
+}
+
+// ====== 重新计算统计 ======
+function recalcStats() {
+  const totalArt = teacherData.filter(t => t.art && !t.exempt).length;
+  const totalDoc = teacherData.filter(t => t.doc && !t.exempt).length;
+  const totalBoth = teacherData.filter(t => t.doc && t.art && !t.exempt).length;
+
+  document.getElementById('cardFanhua').textContent = totalArt;
+  document.getElementById('cardFanhuaRate').textContent = `提交率 ${(totalArt/1465*100).toFixed(1)}%`;
+
+  // 更新课程统计
+  courses.forEach(c => {
+    const ct = teacherData.filter(t => t.course === c.name && !t.exempt);
+    c.art = ct.filter(t => t.art).length;
+    c.doc = ct.filter(t => t.doc).length;
+  });
+  renderCourseDetailTable(document.getElementById('courseSearch').value);
+  renderCourseChart();
+
+  // 更新学区统计
+  districts.forEach(d => {
+    const dt = teacherData.filter(t => t.district === d.name && !t.exempt);
+    d.art = dt.filter(t => t.art).length;
+    d.doc = dt.filter(t => t.doc).length;
+    d.both = dt.filter(t => t.doc && t.art).length;
+  });
+  renderDistrictTable();
+  renderDistrictChart();
+
+  // 更新趋势
+  if (trendData.length > 0) {
+    trendData[trendData.length-1].fanhua = totalArt;
+    trendData[trendData.length-1].doc = totalDoc;
+    trendData[trendData.length-1].both = totalBoth;
+  }
+  renderTrendChart();
+}
+
+// ====== 图表 ======
+let chartDistrictInst, chartCourseInst, chartTrendInst, chartDistrictTrendInst, chartCourseTrendInst;
+
+function renderDistrictChart() {
+  const ctx = document.getElementById('chartDistrict');
+  if (chartDistrictInst) chartDistrictInst.destroy();
+  chartDistrictInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: districts.map(d => d.name),
+      datasets: [
+        { label:'应提交', data:districts.map(d=>d.submit), backgroundColor:'rgba(37,99,235,.15)', borderColor:'#2563eb', borderWidth:1.5, borderRadius:6 },
+        { label:'范画已提交', data:districts.map(d=>d.art), backgroundColor:'#16a34a', borderRadius:6 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' } },
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'条数' } } }
+    }
+  });
+}
+
+function renderCourseChart() {
+  const ctx = document.getElementById('chartCourse');
+  if (chartCourseInst) chartCourseInst.destroy();
+  const names = courses.map(c => c.name.length>7 ? c.name.slice(0,7)+'…' : c.name);
+  chartCourseInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [
+        { label:'应提交', data:courses.map(c=>c.submit), backgroundColor:'rgba(37,99,235,.12)', borderColor:'#2563eb', borderWidth:1.5, borderRadius:6 },
+        { label:'范画已提交', data:courses.map(c=>c.art), backgroundColor:'#16a34a', borderRadius:6 }
+      ]
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' } },
+      scales:{ x:{ beginAtZero:true, title:{ display:true, text:'条数' } } }
+    }
+  });
+}
+
+function renderTrendChart() {
+  const period = document.getElementById('trendPeriod')?.value || 'weekly';
+
+  // 模拟多周数据用于演示趋势
+  let labels, fanhuaData, docData;
+  if (trendData.length <= 1 && period === 'weekly') {
+    // 单周演示：生成模拟历史数据
+    labels = ['6月第一周','6月第二周','6月第三周'];
+    fanhuaData = [0, 0, 13];
+    docData = [0, 0, 2];
+  } else {
+    labels = trendData.map(d => d.period);
+    fanhuaData = trendData.map(d => d.fanhua);
+    docData = trendData.map(d => d.doc);
+  }
+
+  const ctx = document.getElementById('chartTrend');
+  if (chartTrendInst) chartTrendInst.destroy();
+  chartTrendInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'范画提交率', data:fanhuaData.map((v,i) => trendData[0] ? (v/trendData[0].need*100).toFixed(1) : 0),
+          borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', fill:true, tension:.3, pointRadius:5 },
+        { label:'文档提交率', data:docData.map((v,i) => trendData[0] ? (v/trendData[0].need*100).toFixed(1) : 0),
+          borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.1)', fill:true, tension:.3, pointRadius:5 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' } },
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'提交率 %' }, max:100 } }
+    }
+  });
+
+  // 学区趋势
+  const ctx2 = document.getElementById('chartDistrictTrend');
+  if (chartDistrictTrendInst) chartDistrictTrendInst.destroy();
+  chartDistrictTrendInst = new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'教学一区', data:[0,0,1.8], borderColor:'#2563eb', tension:.3 },
+        { label:'教学二区', data:[0,0,0.2], borderColor:'#f59e0b', tension:.3 },
+        { label:'教学三区', data:[0,0,1.0], borderColor:'#16a34a', tension:.3 },
+        { label:'C区', data:[0,0,0.6], borderColor:'#dc2626', tension:.3 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'范画提交率 %' } },
+      scales:{ y:{ beginAtZero:true, max:10 } }
+    }
+  });
+
+  // 课程趋势
+  const ctx3 = document.getElementById('chartCourseTrend');
+  if (chartCourseTrendInst) chartCourseTrendInst.destroy();
+  chartCourseTrendInst = new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: courses.map(c => c.name.length>6 ? c.name.slice(0,6)+'…' : c.name),
+      datasets: [
+        { label:'范画提交率 %', data:courses.map(c => c.submit>0 ? (c.art/c.submit*100).toFixed(1) : 0),
+          backgroundColor: courses.map(c => c.art>0 ? '#16a34a' : '#e5e7eb'), borderRadius:6 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'%' } } }
+    }
+  });
+
+  // 趋势表
+  const tbody = document.getElementById('trendTableBody');
+  const allData = trendData.length > 1 ? trendData : [
+    {period:'6月第一周 (6.1-6.7)', total:1562, need:1465, fanhua:0, doc:0, both:0},
+    {period:'6月第二周 (6.8-6.14)', total:1562, need:1465, fanhua:0, doc:0, both:0},
+    ...trendData
+  ];
+  tbody.innerHTML = allData.map(d => {
+    const fr = d.need>0 ? (d.fanhua/d.need*100).toFixed(1) : '0.0';
+    const dr = d.need>0 ? (d.doc/d.need*100).toFixed(1) : '0.0';
+    const br = d.need>0 ? (d.both/d.need*100).toFixed(1) : '0.0';
+    return `<tr><td>${d.period}</td><td>${d.total}</td><td>${d.need}</td>
+      <td>${d.fanhua}</td><td>${fr}%</td><td>${d.doc}</td><td>${dr}%</td><td>${d.both}</td><td>${br}%</td></tr>`;
+  }).join('');
+}
+
+// ====== 文件上传 ======
+function setupDragDrop() {
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    handleFileUpload(e.dataTransfer.files);
+  });
+}
+
+function handleFileUpload(files) {
+  if (!files || files.length === 0) return;
+  const file = files[0];
+  if (!file.name.match(/\.xlsx?$/i)) { alert('请上传 .xlsx 或 .xls 格式的文件'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const sheetName = wb.SheetNames.find(s => s.includes('明细') || s.includes('课程')) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1});
+
+      if (data.length < 2) { alert('文件格式不正确，至少需要表头+1行数据'); return; }
+
+      // 解析周次（从文件名或第一行日期）
+      let weekLabel = file.name.replace(/\.xlsx?$/i, '');
+      // 尝试从数据中提取日期范围
+      const dates = data.slice(1).map(r => r[10]).filter(d => d).map(d => String(d).slice(0,10));
+      if (dates.length > 0) {
+        dates.sort();
+        weekLabel = `${dates[0]} 至 ${dates[dates.length-1]}`;
+      }
+
+      // 统计
+      let total = 0, exempt = 0, fanhua = 0, doc = 0;
+      // 简化统计：P列(索引15)、O列(索引14)
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (!row || !row[4]) continue; // 没有艺名则跳过
+        total++;
+        const pVal = row[15];
+        const oVal = row[14];
+        if (pVal && String(pVal).trim() && String(pVal).trim() !== '-' && String(pVal).trim() !== 'None') fanhua++;
+        if (oVal && String(oVal).trim() && String(oVal).trim() !== '-' && String(oVal).trim() !== 'None') doc++;
+      }
+
+      const need = total - exempt;
+      const entry = {
+        period: weekLabel,
+        total, need, fanhua, doc,
+        both: Math.min(fanhua, doc)
+      };
+
+      // 检查是否已存在同周期数据
+      const existingIdx = trendData.findIndex(d => d.period === weekLabel);
+      if (existingIdx >= 0) {
+        if (!confirm(`已存在「${weekLabel}」的数据，是否覆盖？`)) return;
+        trendData[existingIdx] = entry;
+      } else {
+        trendData.push(entry);
+      }
+
+      saveToStorage();
+      updateUploadHistory();
+      renderTrendChart();
+      switchTab('trend');
+      alert(`✅ 「${weekLabel}」数据上传成功！\n总排课: ${total} | 范画: ${fanhua} | 文档: ${doc}`);
+
+    } catch(err) {
+      alert('文件解析失败：' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function updateUploadHistory() {
+  document.getElementById('historyList').innerHTML = trendData.map(d =>
+    `<span style="margin-right:12px;">📅 ${d.period} — 范画${d.fanhua}/${d.need}</span>`
+  ).join('<br>');
+}
+
+// ====== 弹窗 ======
+function openImage(src, title) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = `<img src="${src}" alt="${title}">`;
+  document.getElementById('imageModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('imageModal').classList.remove('show');
+}
+
+// ====== 排序 ======
+let sortDirs = {};
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  sortDirs[`${tableId}_${colIdx}`] = !sortDirs[`${tableId}_${colIdx}`];
+  const dir = sortDirs[`${tableId}_${colIdx}`] ? 1 : -1;
+  rows.sort((a,b) => {
+    let va = a.cells[colIdx].textContent.replace('%','').trim();
+    let vb = b.cells[colIdx].textContent.replace('%','').trim();
+    const na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return (na - nb) * dir;
+    return va.localeCompare(vb) * dir;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// ====== 筛选器填充 ======
+function populateFilters() {
+  const courseSet = [...new Set(teacherData.map(t => t.course))];
+  const sel = document.getElementById('teacherCourseFilter');
+  courseSet.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c; sel.appendChild(opt);
+  });
+}
+
+// ====== 导出Excel ======
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: 学区汇总
+  const dr = [['学区','总排课','免检','应提交','文档提交','文档率','范画提交','范画率','双项完成']];
+  districts.forEach(d => {
+    const ar = d.submit>0?(d.art/d.submit*100).toFixed(1):'0.0';
+    const drr = d.submit>0?(d.doc/d.submit*100).toFixed(1):'0.0';
+    dr.push([d.name,d.total,d.exempt,d.submit,d.doc,drr+'%',d.art,ar+'%',d.both]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dr), '学区汇总');
+
+  // Sheet 2: 课程明细
+  const cr = [['课程','总排课','免检','应提交','文档提交','文档率','范画提交','范画率']];
+  courses.forEach(c => {
+    const ar = c.submit>0?(c.art/c.submit*100).toFixed(1):'0.0';
+    const drr = c.submit>0?(c.doc/c.submit*100).toFixed(1):'0.0';
+    cr.push([c.name,c.total,c.exempt,c.submit,c.doc,drr+'%',c.art,ar+'%']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cr), '课程明细');
+
+  // Sheet 3: 老师名单
+  const tr = [['序号','艺名','真实姓名','学区','课程','备课文档','范画','状态']];
+  teacherData.forEach((t,i) => {
+    const s = t.exempt?'免检':(t.doc&&t.art?'已提交':(t.doc||t.art?'部分提交':'未提交'));
+    tr.push([i+1,t.name,t.real,t.district,t.course,t.doc?'已提交':'未提交',t.art?'已提交':'未提交',s]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tr), '老师名单');
+
+  // Sheet 4: 累计趋势
+  const tdr = [['周期','总排课','应提交','范画提交','范画率','文档提交','文档率','双项完成','双项率']];
+  trendData.forEach(d => {
+    const fr = d.need>0?(d.fanhua/d.need*100).toFixed(1):'0.0';
+    const drr = d.need>0?(d.doc/d.need*100).toFixed(1):'0.0';
+    const br = d.need>0?(d.both/d.need*100).toFixed(1):'0.0';
+    tdr.push([d.period,d.total,d.need,d.fanhua,fr+'%',d.doc,drr+'%',d.both,br+'%']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tdr), '累计趋势');
+
+  XLSX.writeFile(wb, '备课提交审核看板_2026年6月第三周.xlsx');
+}
+
+// ====== 键盘快捷键 ======
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+
+</body>
+</html>
