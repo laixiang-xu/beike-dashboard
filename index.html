@@ -1148,22 +1148,40 @@ function handleFileUpload(files) {
       // 解析表头
       const headers = data[0].map(h => String(h || '').trim());
 
-      // 查找AI评分列的索引
-      const aiScoreIdx = headers.findIndex(h => h.includes('AI综合评分') || h.includes('ai_score'));
-      const aiVerdictIdx = headers.findIndex(h => h.includes('评定等级') || h.includes('ai_verdict'));
-      const aiCommentIdx = headers.findIndex(h => h.includes('AI评语') || h.includes('ai_comment'));
-      const qietiIdx = headers.findIndex(h => h.includes('切题度'));
-      const shifanIdx = headers.findIndex(h => h.includes('示范性'));
-      const yishuIdx = headers.findIndex(h => h.includes('艺术质量'));
-      const wanzhengIdx = headers.findIndex(h => h.includes('完整度'));
-      const chuangyiIdx = headers.findIndex(h => h.includes('创意'));
+      // 智能查找关键列的索引（通过列名而非硬编码位置）
+      const findCol = (keywords) => {
+        for (const kw of keywords) {
+          const idx = headers.findIndex(h => h.includes(kw));
+          if (idx >= 0) return idx;
+        }
+        return -1;
+      };
+
+      // 基础列
+      const nameIdx = findCol(['艺名']) >= 0 ? findCol(['艺名']) : 4;
+      const realIdx = findCol(['真实姓名', '真名']) >= 0 ? findCol(['真实姓名', '真名']) : 3;
+      const districtIdx = findCol(['学区']) >= 0 ? findCol(['学区']) : 5;
+      const courseIdx = findCol(['课程名称', '课程名']) >= 0 ? findCol(['课程名称', '课程名']) : 9;
+      const dateIdx = findCol(['上课日期']) >= 0 ? findCol(['上课日期']) : 10;
+      const docIdx = findCol(['备课文档']) >= 0 ? findCol(['备课文档']) : 14;
+      const artIdx = findCol(['提交范画']) >= 0 ? findCol(['提交范画']) : 15;
+
+      // AI评分列
+      const aiScoreIdx = findCol(['AI综合评分', 'ai_score']);
+      const aiVerdictIdx = findCol(['评定等级', 'ai_verdict']);
+      const aiCommentIdx = findCol(['AI评语', 'ai_comment']);
+      const qietiIdx = findCol(['切题度']);
+      const shifanIdx = findCol(['示范性']);
+      const yishuIdx = findCol(['艺术质量']);
+      const wanzhengIdx = findCol(['完整度']);
+      const chuangyiIdx = findCol(['创意']);
 
       const hasAIData = aiScoreIdx >= 0;
 
       // 解析周次（从文件名或第一行日期）
       let weekLabel = file.name.replace(/\.xlsx?$/i, '');
       // 尝试从数据中提取日期范围
-      const dates = data.slice(1).map(r => r[10]).filter(d => d).map(d => String(d).slice(0,10));
+      const dates = data.slice(1).map(r => r[dateIdx]).filter(d => d).map(d => String(d).slice(0,10));
       if (dates.length > 0) {
         dates.sort();
         weekLabel = `${dates[0]} 至 ${dates[dates.length-1]}`;
@@ -1177,16 +1195,23 @@ function handleFileUpload(files) {
       let total = 0, exempt = 0, fanhua = 0, doc = 0;
       let aiQualified = 0, aiUnqualified = 0, aiTotal = 0;
 
+      // 判断某个值是否是"已提交"
+      const isSubmitted = (val) => {
+        if (val === null || val === undefined) return false;
+        const s = String(val).trim();
+        return s !== '' && s !== '-' && s !== 'None' && s !== '0' && s.toLowerCase() !== 'false';
+      };
+
       // 解析每一行
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
-        if (!row || !row[4]) continue; // 没有艺名则跳过
+        if (!row || !row[nameIdx]) continue; // 没有艺名则跳过
 
         total++;
-        const pVal = row[15]; // P列-范画
-        const oVal = row[14]; // O列-文档
-        const hasFanhua = pVal && String(pVal).trim() && String(pVal).trim() !== '-' && String(pVal).trim() !== 'None';
-        const hasDoc = oVal && String(oVal).trim() && String(oVal).trim() !== '-' && String(oVal).trim() !== 'None';
+        const pVal = row[artIdx];  // 提交范画
+        const oVal = row[docIdx];  // 备课文档
+        const hasFanhua = isSubmitted(pVal);
+        const hasDoc = isSubmitted(oVal);
 
         if (hasFanhua) fanhua++;
         if (hasDoc) doc++;
@@ -1194,10 +1219,10 @@ function handleFileUpload(files) {
         // 构建教师数据对象
         const teacher = {
           id: i,
-          name: row[4] || '',        // 艺名
-          real: row[3] || '',         // 真名
-          district: row[5] || '',     // 学区
-          course: row[9] || '',       // 课程名
+          name: row[nameIdx] || '',        // 艺名
+          real: row[realIdx] || '',         // 真名
+          district: row[districtIdx] || '',     // 学区
+          course: row[courseIdx] || '',       // 课程名
           doc: hasDoc,
           art: hasFanhua,
           exempt: false
@@ -1555,7 +1580,11 @@ function renderAIGallery(data = aiReviewData) {
   });
 
   if (data.length === 0) {
-    gallery.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);">暂无数据，请先上传AI评分CSV文件</div>';
+    if (aiReviewData.length === 0) {
+      gallery.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);">暂无数据，请先在"上传数据"标签上传包含AI评分的Excel文件</div>';
+    } else {
+      gallery.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-500);">没有符合当前筛选条件的作品，请调整筛选条件</div>';
+    }
   }
 }
 
