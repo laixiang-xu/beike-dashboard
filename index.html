@@ -643,6 +643,8 @@ function saveToStorage() {
     localStorage.setItem('beike_trendData', JSON.stringify(trendData));
     localStorage.setItem('beike_editedRecords', JSON.stringify(editedRecords));
     localStorage.setItem('beike_teacherData', JSON.stringify(teacherData));
+    localStorage.setItem('beike_courses', JSON.stringify(courses));
+    localStorage.setItem('beike_districts', JSON.stringify(districts));
   } catch(e) {}
 }
 function loadFromStorage() {
@@ -651,6 +653,29 @@ function loadFromStorage() {
     if (td) trendData = JSON.parse(td);
     const er = localStorage.getItem('beike_editedRecords');
     if (er) editedRecords = JSON.parse(er);
+    const tData = localStorage.getItem('beike_teacherData');
+    if (tData) {
+      teacherData.length = 0;
+      JSON.parse(tData).forEach(t => teacherData.push(t));
+    }
+    const cData = localStorage.getItem('beike_courses');
+    if (cData) {
+      courses.length = 0;
+      JSON.parse(cData).forEach(c => courses.push(c));
+    }
+    const dData = localStorage.getItem('beike_districts');
+    if (dData) {
+      districts.length = 0;
+      JSON.parse(dData).forEach(d => districts.push(d));
+    }
+    // 重新渲染所有视图
+    if (tData || cData || dData) {
+      renderDistrictTable();
+      renderCourseDetailTable();
+      renderTeacherTable();
+      renderDistrictChart();
+      renderCourseChart();
+    }
   } catch(e) {}
   renderTrendChart();
 }
@@ -1278,6 +1303,57 @@ function handleFileUpload(files) {
         total, need, fanhua, doc,
         both: Math.min(fanhua, doc)
       };
+
+      // 从teacherData重新计算courses数据
+      const coursesStats = {};
+      teacherData.forEach(t => {
+        if (!t.course) return;
+        if (!coursesStats[t.course]) {
+          coursesStats[t.course] = {
+            name: t.course,
+            total: 0,
+            exempt: 0,
+            submit: 0,
+            doc: 0,
+            art: 0
+          };
+        }
+        const c = coursesStats[t.course];
+        c.total++;
+        if (t.exempt) c.exempt++;
+        if (!t.exempt) c.submit++;
+        if (t.doc) c.doc++;
+        if (t.art) c.art++;
+      });
+      // 清空原courses数组并填入新数据
+      courses.length = 0;
+      Object.values(coursesStats).forEach(c => courses.push(c));
+
+      // 从teacherData重新计算districts数据
+      const districtsStats = {};
+      teacherData.forEach(t => {
+        if (!t.district) return;
+        if (!districtsStats[t.district]) {
+          districtsStats[t.district] = {
+            name: t.district,
+            total: 0,
+            exempt: 0,
+            submit: 0,
+            doc: 0,
+            art: 0,
+            both: 0
+          };
+        }
+        const d = districtsStats[t.district];
+        d.total++;
+        if (t.exempt) d.exempt++;
+        if (!t.exempt) d.submit++;
+        if (t.doc) d.doc++;
+        if (t.art) d.art++;
+        if (t.doc && t.art) d.both++;
+      });
+      districts.length = 0;
+      Object.values(districtsStats).forEach(d => districts.push(d));
 
       // 更新总览卡片
       document.getElementById('cardTotal').textContent = total.toLocaleString();
