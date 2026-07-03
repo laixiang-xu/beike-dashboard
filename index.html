@@ -833,19 +833,47 @@ function renderGallery(courseName) {
   title.textContent = `🖼️ ${courseName} — ${courseTeachers.length}位老师提交`;
 
   grid.innerHTML = courseTeachers.map(t => {
+    // 自动构建图片路径：images/{教师艺名}_{课程简称}.{jpg|jpeg|png}
+    // 课程简称：取课程名最后几个字，去掉"系统课"等前缀
+    const courseShort = t.course.replace(/^系统课|^体验课|^L\d+/g, '').trim();
+
+    // 尝试多种可能的文件扩展名
+    const possibleImages = [
+      `images/${t.name}_${courseShort}.jpg`,
+      `images/${t.name}_${courseShort}.jpeg`,
+      `images/${t.name}_${courseShort}.png`,
+      `images/${t.name}.jpg`,  // 简化命名：只用教师名
+      `images/${t.name}.jpeg`,
+      `images/${t.name}.png`,
+    ];
+
+    // 优先使用硬编码的图片映射（兼容旧数据）
     const imgs = artImages[t.name] || {};
-    const artImg = imgs.art || '';
+    let artImg = imgs.art || '';
+
+    // 如果硬编码中没有，使用自动拼接的第一个可能路径
+    if (!artImg && t.art) {
+      artImg = possibleImages[0];  // 默认尝试 .jpg
+    }
+
     const docImg = imgs.doc || '';
     const hasArt = artImg && t.art;
     const hasDoc = docImg && t.doc;
 
     let imgHtml = '';
     if (hasArt) {
-      imgHtml = `<img src="${artImg}" alt="${t.name}的范画" onclick="openImage('${artImg}','${t.name} — 范画')" style="cursor:pointer;">`;
+      // 添加图片加载错误处理
+      imgHtml = `<img src="${artImg}" alt="${t.name}的范画"
+        onclick="openImage('${artImg}','${t.name} — 范画')"
+        onerror="this.parentElement.innerHTML='<div style=\\'height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--gray-100);color:var(--gray-500);\\'>📷 图片未上传<br><small style=\\'font-size:11px;margin-top:8px;\\'>预期路径：${artImg}</small></div>'"
+        style="cursor:pointer;width:100%;height:200px;object-fit:cover;">`;
     } else if (hasDoc) {
-      imgHtml = `<img src="${docImg}" alt="${t.name}的备课文档" onclick="openImage('${docImg}','${t.name} — 备课文档')" style="cursor:pointer;">`;
+      imgHtml = `<img src="${docImg}" alt="${t.name}的备课文档"
+        onclick="openImage('${docImg}','${t.name} — 备课文档')"
+        onerror="this.parentElement.innerHTML='<div style=\\'height:200px;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-500);\\'>📷 文档图片未上传</div>'"
+        style="cursor:pointer;width:100%;height:200px;object-fit:cover;">`;
     } else {
-      imgHtml = `<div style="height:200px;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-500);">📷 图片未提取</div>`;
+      imgHtml = `<div style="height:200px;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-500);">📷 未提交范画</div>`;
     }
 
     // 显示AI评分（如果有）
