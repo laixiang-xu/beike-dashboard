@@ -701,19 +701,32 @@ function switchWeek(weekStr) {
   window.location.href = url.toString();
 }
 
-// 更新周选择器（扫描data目录下的JSON文件）
-function updateWeekSelector() {
+// 更新周选择器（优先读取 data/weeks.json，失败则回退到硬编码）
+async function updateWeekSelector() {
   const sel = document.getElementById('weekSelector');
   if (!sel) return;
-  // 简单方案：列出已知的周数据文件
-  const knownWeeks = ['2026-07-08'];
-  sel.innerHTML = knownWeeks.map(w => {
-    const selected = (weekData && weekData.week === w) ? ' selected' : '';
-    return `<option value="${w}"${selected}>${w}</option>`;
-  }).join('');
-  if (knownWeeks.length === 0) {
-    sel.innerHTML = '<option value="">无数据</option>';
+
+  let knownWeeks = [];
+  try {
+    const resp = await fetch('data/weeks.json');
+    if (resp.ok) {
+      const weeksIndex = await resp.json();
+      if (weeksIndex.weeks && weeksIndex.weeks.length) {
+        knownWeeks = weeksIndex.weeks.map(w => ({ id: w.id || w.week, label: w.label || w.id || w.week }));
+      }
+    }
+  } catch (e) {
+    console.log('未能读取 weeks.json，使用回退列表');
   }
+
+  if (knownWeeks.length === 0) {
+    knownWeeks = [{ id: '2026-07-08', label: '2026年7月第二周' }];
+  }
+
+  sel.innerHTML = knownWeeks.map(w => {
+    const selected = (weekData && weekData.week === w.id) ? ' selected' : '';
+    return `<option value="${w.id}"${selected}>${w.label}</option>`;
+  }).join('');
 }
 
 // ====== 核心数据 ======
