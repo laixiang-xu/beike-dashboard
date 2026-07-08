@@ -675,6 +675,20 @@ async function loadJSONData() {
       document.getElementById('cardFanhua').textContent = s.fanhua_submitted || 0;
       document.getElementById('cardFanhuaRate').textContent =
         s.fanhua_rate ? `提交率 ${s.fanhua_rate}` : `提交率 ${s.need_submit ? ((s.fanhua_submitted / s.need_submit) * 100).toFixed(1) : 0}%`;
+
+      // 合格率 / 不合格率：优先用 summary 预计算值，否则从 fanhua_scores 实时计算
+      if (s.fanhua_qualified_rate !== undefined) {
+        document.getElementById('cardQualified').textContent = s.fanhua_qualified_rate;
+      } else if (fanhuaScores.length > 0) {
+        const q = fanhuaScores.filter(f => f.ai_score >= 3.0).length;
+        document.getElementById('cardQualified').textContent = ((q / fanhuaScores.length) * 100).toFixed(1) + '%';
+      }
+      if (s.fanhua_unqualified_rate !== undefined) {
+        document.getElementById('cardUnqualified').textContent = s.fanhua_unqualified_rate;
+      } else if (fanhuaScores.length > 0) {
+        const uq = fanhuaScores.filter(f => f.ai_score < 3.0).length;
+        document.getElementById('cardUnqualified').textContent = ((uq / fanhuaScores.length) * 100).toFixed(1) + '%';
+      }
     }
 
     // 更新页脚

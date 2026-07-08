@@ -13,7 +13,13 @@
     "doc_rate": "42.6%",
     "on_time_rate": "85%",
     "late_rate": "12%",
-    "missing_rate": "3%"
+    "missing_rate": "3%",
+    "fanhua_qualified": 13,
+    "fanhua_qualified_rate": "100%",
+    "fanhua_unqualified": 0,
+    "fanhua_unqualified_rate": "0%",
+    "fanhua_excellent": 6,
+    "fanhua_excellent_rate": "46.2%"
   },
   "by_district": [
     { "name": "教学一区", "total": 15, "exempt": 1, "need": 14, "fanhua_submitted": 5, "fanhua_rate": "35.7%", "doc_submitted": 7, "doc_rate": "50%", "excellent_rate": "20%" },
