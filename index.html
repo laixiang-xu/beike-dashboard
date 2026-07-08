@@ -206,6 +206,9 @@ tr.edited { background: #fef3c7 !important; }
     <div class="subtitle" id="headerDate">2026年6月第三周（6.15—6.21） | 数据更新：2026-06-16 15:30</div>
   </div>
   <div class="header-actions">
+    <select id="weekSelector" onchange="switchWeek(this.value)" style="padding:6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-family:inherit;cursor:pointer;margin-right:8px;">
+      <option value="">加载中...</option>
+    </select>
     <button class="btn btn-primary" onclick="exportExcel()">📥 下载Excel</button>
     <button class="btn btn-outline" onclick="window.print()">🖨️ 打印/导出PDF</button>
   </div>
@@ -562,6 +565,157 @@ tr.edited { background: #fef3c7 !important; }
 </div>
 
 <script>
+// ====== JSON数据驱动加载 ======
+let dataLoaded = false;
+let weekData = null;
+
+async function loadJSONData() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const weekParam = urlParams.get('week');
+  const jsonFile = weekParam ? `data/week-${weekParam}.json` : 'data/week-2026-07-08.json';
+
+  try {
+    const resp = await fetch(jsonFile);
+    if (!resp.ok) throw new Error('JSON not found');
+    weekData = await resp.json();
+    dataLoaded = true;
+
+    // 兼容：新版 JSON 直接提供 teachers/courses；旧版/示例 JSON 只有 summary/by_district/fanhua_scores
+    if (weekData.teachers && weekData.teachers.length) {
+      teacherData.length = 0;
+      weekData.teachers.forEach(t => teacherData.push(t));
+    } else if (weekData.fanhua_scores && weekData.fanhua_scores.length) {
+      // 从范画评分反推教师数据（只包含已提交范画的老师）
+      teacherData.length = 0;
+      weekData.fanhua_scores.forEach((f, idx) => {
+        teacherData.push({
+          id: idx + 1,
+          name: f.teacher || '',
+          real: f.real_name || '',
+          district: f.district || '',
+          course: f.course || '',
+          doc: true,
+          art: true,
+          exempt: false,
+          aiScore: f.ai_score,
+          aiVerdict: f.verdict || '',
+          aiComment: f.comment || '',
+          aiDimensions: f.dimensions || {}
+        });
+      });
+    }
+
+    if (weekData.courses && weekData.courses.length) {
+      courses.length = 0;
+      weekData.courses.forEach(c => courses.push(c));
+    } else if (teacherData.length) {
+      // 从教师数据按课程聚合
+      const courseMap = {};
+      teacherData.forEach(t => {
+        if (!t.course) return;
+        if (!courseMap[t.course]) {
+          courseMap[t.course] = { name: t.course, total: 0, exempt: 0, submit: 0, doc: 0, art: 0 };
+        }
+        courseMap[t.course].total++;
+        if (!t.exempt) courseMap[t.course].submit++;
+        if (t.exempt) courseMap[t.course].exempt++;
+        if (t.doc) courseMap[t.course].doc++;
+        if (t.art) courseMap[t.course].art++;
+      });
+      // 如果 summary 里有总课程数，补齐未提交课程的空壳
+      if (weekData.summary && weekData.summary.fanhua_submitted !== undefined) {
+        const submittedSet = new Set(Object.keys(courseMap));
+        // 没有更多课程信息时，只显示已提交课程
+      }
+      courses.length = 0;
+      Object.values(courseMap).forEach(c => courses.push(c));
+    }
+
+    // 填充 districts：优先使用 by_district
+    districts.length = 0;
+    if (weekData.by_district && weekData.by_district.length) {
+      weekData.by_district.forEach(d => districts.push({
+        name: d.name, total: d.total, exempt: d.exempt || 0,
+        submit: d.need, doc: d.doc_submitted || 0, art: d.fanhua_submitted || 0,
+        both: Math.min(d.doc_submitted || 0, d.fanhua_submitted || 0)
+      }));
+    } else if (teacherData.length) {
+      const districtMap = {};
+      teacherData.forEach(t => {
+        if (!t.district) return;
+        if (!districtMap[t.district]) {
+          districtMap[t.district] = { name: t.district, total: 0, exempt: 0, submit: 0, doc: 0, art: 0, both: 0 };
+        }
+        districtMap[t.district].total++;
+        if (t.exempt) districtMap[t.district].exempt++;
+        else districtMap[t.district].submit++;
+        if (t.doc) districtMap[t.district].doc++;
+        if (t.art) districtMap[t.district].art++;
+        if (t.doc && t.art) districtMap[t.district].both++;
+      });
+      Object.values(districtMap).forEach(d => districts.push(d));
+    }
+
+    // 填充范画评分
+    fanhuaScores.length = 0;
+    if (weekData.fanhua_scores) {
+      weekData.fanhua_scores.forEach(f => fanhuaScores.push(f));
+    }
+
+    // 更新头部信息
+    document.getElementById('headerDate').textContent =
+      `${weekData.week_label || weekData.week} | 数据更新：${weekData.generated_at || ''}`;
+
+    // 同步更新概览卡片（避免旧硬编码数据残留）
+    if (weekData.summary) {
+      const s = weekData.summary;
+      document.getElementById('cardTotal').textContent = (s.total_records || 0).toLocaleString();
+      document.getElementById('cardExempt').textContent = s.exempt_count || 0;
+      document.getElementById('cardNeed').textContent = (s.need_submit || 0).toLocaleString();
+      document.getElementById('cardFanhua').textContent = s.fanhua_submitted || 0;
+      document.getElementById('cardFanhuaRate').textContent =
+        s.fanhua_rate ? `提交率 ${s.fanhua_rate}` : `提交率 ${s.need_submit ? ((s.fanhua_submitted / s.need_submit) * 100).toFixed(1) : 0}%`;
+    }
+
+    // 更新页脚
+    const footer = document.querySelector('.footer');
+    if (footer) {
+      footer.textContent = `备课提交审核系统 v2 · GitHub Pages 数据驱动 · ${weekData.week_label || weekData.week} · 生成于 ${weekData.generated_at || ''}`;
+    }
+
+    console.log(`Data loaded from ${jsonFile}: ${teacherData.length} teachers, ${courses.length} courses, ${districts.length} districts, ${fanhuaScores.length} fanhua scores`);
+    updateWeekSelector();
+    return true;
+  } catch(e) {
+    console.log('JSON data not available, using cached/local data:', e.message);
+    updateWeekSelector();
+    return false;
+  }
+}
+
+// 周切换
+function switchWeek(weekStr) {
+  if (!weekStr) return;
+  const url = new URL(window.location);
+  url.searchParams.set('week', weekStr);
+  window.location.href = url.toString();
+}
+
+// 更新周选择器（扫描data目录下的JSON文件）
+function updateWeekSelector() {
+  const sel = document.getElementById('weekSelector');
+  if (!sel) return;
+  // 简单方案：列出已知的周数据文件
+  const knownWeeks = ['2026-07-08'];
+  sel.innerHTML = knownWeeks.map(w => {
+    const selected = (weekData && weekData.week === w) ? ' selected' : '';
+    return `<option value="${w}"${selected}>${w}</option>`;
+  }).join('');
+  if (knownWeeks.length === 0) {
+    sel.innerHTML = '<option value="">无数据</option>';
+  }
+}
+
 // ====== 核心数据 ======
 const teacherData = [
   {id:1, name:"童言", real:"蔡雲霏", district:"教学一区", course:"棋盘上的迁徙之旅", doc:true, art:true, exempt:false},
@@ -615,6 +769,9 @@ const artImages = {
   "小璐老师": { art: "images/P40_image11.jpeg" },
 };
 
+// 范画AI评分数据（由JSON加载或上传Excel填充）
+let fanhuaScores = [];
+
 // 累计趋势模拟数据（单周演示，上传多周后自动累计）
 let trendData = [
   {period:"6月第三周 (6.15-6.21)", total:1562, need:1465, fanhua:13, doc:2, both:2}
@@ -625,16 +782,24 @@ let editedRecords = {};
 let selectedCourse = null;
 
 // ====== 初始化 ======
-document.addEventListener('DOMContentLoaded', () => {
-  renderDistrictTable();
-  renderCourseDetailTable();
-  renderTeacherTable();
+document.addEventListener('DOMContentLoaded', async () => {
+  // 先尝试从localStorage恢复
+  loadFromStorage();
+  // 再尝试从JSON加载（会覆盖localStorage数据）
+  const jsonLoaded = await loadJSONData();
+  if (jsonLoaded) {
+    // JSON加载成功，用JSON数据重新渲染
+    renderDistrictTable();
+    renderCourseDetailTable();
+    renderTeacherTable();
+    renderDistrictChart();
+    renderCourseChart();
+    renderAIFanhuaGallery();
+    saveToStorage(); // 同步到localStorage
+  }
   renderTrendChart();
-  renderDistrictChart();
-  renderCourseChart();
   setupDragDrop();
   populateFilters();
-  loadFromStorage();
 });
 
 // ====== 本地存储 ======
@@ -701,45 +866,56 @@ function switchTab(name) {
 function renderDistrictTable() {
   const tbody = document.getElementById('districtBody');
 
-  // 从teacherData重新计算各学区统计
-  const districtStats = {};
-
-  teacherData.forEach(t => {
-    if (!districtStats[t.district]) {
-      districtStats[t.district] = {
-        name: t.district,
-        total: 0,
-        exempt: 0,
-        submit: 0,
-        doc: 0,
-        art: 0,
-        both: 0,
-        aiQualified: 0,      // AI评分≥3.0
-        aiUnqualified: 0,    // AI评分<3.0或=0
-        aiExcellent: 0,      // AI评分≥4.5
-        aiTotal: 0           // 有AI评分的总数
+  // 学区统计优先使用 districts 数组（已由 JSON 的 by_district 填充完整）
+  // 如果 districts 为空，才回退到从 teacherData 重新计算
+  let districtStats = {};
+  if (districts.length > 0) {
+    districts.forEach(d => {
+      districtStats[d.name] = {
+        name: d.name,
+        total: d.total || 0,
+        exempt: d.exempt || 0,
+        submit: d.submit || 0,
+        doc: d.doc || 0,
+        art: d.art || 0,
+        both: d.both || 0,
+        aiQualified: 0,
+        aiUnqualified: 0,
+        aiExcellent: 0,
+        aiTotal: 0
       };
-    }
+    });
+  }
 
-    const stat = districtStats[t.district];
-    stat.total++;
-    if (t.exempt) stat.exempt++;
-    if (!t.exempt) stat.submit++;
-    if (t.doc) stat.doc++;
-    if (t.art) stat.art++;
-    if (t.doc && t.art) stat.both++;
+  // 从 teacherData 重新计算（兼容无 districts 数据的情况）
+  if (districts.length === 0) {
+    teacherData.forEach(t => {
+      if (!districtStats[t.district]) {
+        districtStats[t.district] = { name: t.district, total: 0, exempt: 0, submit: 0, doc: 0, art: 0, both: 0, aiQualified: 0, aiUnqualified: 0, aiExcellent: 0, aiTotal: 0 };
+      }
+      const stat = districtStats[t.district];
+      stat.total++;
+      if (t.exempt) stat.exempt++;
+      if (!t.exempt) stat.submit++;
+      if (t.doc) stat.doc++;
+      if (t.art) stat.art++;
+      if (t.doc && t.art) stat.both++;
+    });
+  }
 
-    // 统计AI评分
-    if (t.art && t.aiScore !== undefined) {
-      stat.aiTotal++;
-      if (t.aiScore >= 4.5) {
-        stat.aiExcellent++;
-      }
-      if (t.aiScore >= 3.0) {
-        stat.aiQualified++;
-      } else if (t.aiScore < 3.0) {
-        stat.aiUnqualified++;
-      }
+  // 从 fanhuaScores 补充 AI 评分统计（按 district 聚合）
+  // 同时从 teacherData 的 aiScore 补充
+  const scoreSources = [];
+  fanhuaScores.forEach(f => scoreSources.push({ district: f.district, score: f.ai_score }));
+  teacherData.forEach(t => { if (t.aiScore !== undefined) scoreSources.push({ district: t.district, score: t.aiScore }); });
+
+  scoreSources.forEach(s => {
+    const dName = s.district;
+    if (dName && districtStats[dName]) {
+      districtStats[dName].aiTotal++;
+      if (s.score >= 4.5) districtStats[dName].aiExcellent++;
+      if (s.score >= 3.0) districtStats[dName].aiQualified++;
+      else if (s.score < 3.0) districtStats[dName].aiUnqualified++;
     }
   });
 
@@ -753,7 +929,6 @@ function renderDistrictTable() {
     const dr = d.submit > 0 ? (d.doc / d.submit * 100).toFixed(1) : '0.0';
     const br = d.submit > 0 ? (d.both / d.submit * 100).toFixed(1) : '0.0';
 
-    // AI评分统计
     const qualifiedRate = d.aiTotal > 0 ? ((d.aiQualified / d.aiTotal) * 100).toFixed(1) : '-';
     const unqualifiedRate = d.aiTotal > 0 ? ((d.aiUnqualified / d.aiTotal) * 100).toFixed(1) : '-';
     const excellentRate = d.aiTotal > 0 ? ((d.aiExcellent / d.aiTotal) * 100).toFixed(1) : '-';
@@ -1533,17 +1708,39 @@ document.addEventListener('keydown', e => {
 // ==================== AI评比功能 ====================
 let aiReviewData = [];
 
+// 获取当前可用的评比数据源（优先fanhuaScores JSON，其次aiReviewData Excel）
+function getReviewDataSource() {
+  if (fanhuaScores.length > 0) {
+    // 将fanhuaScores转换为aiReviewData兼容格式
+    return fanhuaScores.map(f => ({
+      教师姓名: f.teacher,
+      课程名称: f.course,
+      学区: f.district,
+      ai_score: f.ai_score,
+      ai_dimensions: JSON.stringify(f.dimensions).replace(/"/g, "'"),
+      ai_verdict: f.verdict,
+      ai_comment: f.comment
+    }));
+  }
+  return aiReviewData;
+}
+
 // 加载已保存的AI评分数据
 function loadAIReviewData() {
   const saved = localStorage.getItem('aiReviewData');
   if (saved) {
     aiReviewData = JSON.parse(saved);
-    if (aiReviewData.length > 0) {
-      populateAIFilters();
-      renderAIStats();
-      renderAIGallery();
-      renderAIPlagiarism();
-    }
+  }
+  // 如果fanhuaScores已加载，优先使用
+  const dataSource = getReviewDataSource();
+  if (dataSource.length > 0 && dataSource !== aiReviewData) {
+    aiReviewData = dataSource;
+  }
+  if (aiReviewData.length > 0) {
+    populateAIFilters();
+    renderAIStats();
+    renderAIGallery();
+    renderAIPlagiarism();
   }
 }
 
@@ -1572,8 +1769,18 @@ function applyAIFilters() {
     // 课程筛选
     if (course && item.课程名称 !== course) return false;
 
-    // 学区筛选
-    if (district && !item.教师姓名?.includes(district)) return false;
+    // 学区筛选：匹配 item.学区 或按旧数据兼容教师姓名
+    if (district) {
+      const itemDistrict = item.学区 || '';
+      const itemName = item.教师姓名 || '';
+      const districtMap = {
+        '一区': '教学一区',
+        '二区': '教学二区',
+        '三区': '教学三区'
+      };
+      const expected = districtMap[district] || district;
+      if (!itemDistrict.includes(expected) && !itemName.includes(expected)) return false;
+    }
 
     // 等级筛选（新逻辑）
     if (verdict === 'excellent' && score < 4.5) return false;  // 优秀：≥4.5分
@@ -1711,8 +1918,10 @@ function showAIDetail(item) {
     dimensions = '<p style="color:#dc2626;">维度数据格式错误</p>';
   }
 
-  const modal = document.getElementById('modal');
+  const modal = document.getElementById('imageModal');
   const modalBody = document.getElementById('modalBody');
+  const modalTitle = document.getElementById('modalTitle');
+  if (modalTitle) modalTitle.textContent = `${item.教师姓名} - ${item.课程名称}`;
 
   modalBody.innerHTML = `
     <h2 style="margin-bottom:20px;">${item.教师姓名} - ${item.课程名称}</h2>
@@ -1734,7 +1943,7 @@ function showAIDetail(item) {
     </div>
   `;
 
-  modal.style.display = 'flex';
+  modal.classList.add('show');
 }
 
 // 渲染抄袭检测
@@ -1762,6 +1971,17 @@ function renderAIPlagiarism() {
 
 // 页面加载时尝试读取已保存的AI数据
 loadAIReviewData();
+
+// 从JSON数据渲染范画评比（初始化时调用）
+function renderAIFanhuaGallery() {
+  if (fanhuaScores.length > 0) {
+    aiReviewData = getReviewDataSource();
+    populateAIFilters();
+    renderAIStats();
+    renderAIGallery();
+    renderAIPlagiarism();
+  }
+}
 
 </script>
 

@@ -1,0 +1,174 @@
+{
+  "_说明": "每周数据文件，由Python脚本自动生成。格式：week-YYYY-MM-DD.json",
+  "week": "2026-07-08",
+  "week_label": "2026年7月第二周",
+  "generated_at": "2026-07-08 17:40:00",
+  "summary": {
+    "total_records": 50,
+    "exempt_count": 3,
+    "need_submit": 47,
+    "fanhua_submitted": 13,
+    "fanhua_rate": "27.7%",
+    "doc_submitted": 20,
+    "doc_rate": "42.6%",
+    "on_time_rate": "85%",
+    "late_rate": "12%",
+    "missing_rate": "3%"
+  },
+  "by_district": [
+    { "name": "教学一区", "total": 15, "exempt": 1, "need": 14, "fanhua_submitted": 5, "fanhua_rate": "35.7%", "doc_submitted": 7, "doc_rate": "50%", "excellent_rate": "20%" },
+    { "name": "教学二区", "total": 8, "exempt": 0, "need": 8, "fanhua_submitted": 2, "fanhua_rate": "25%", "doc_submitted": 4, "doc_rate": "50%", "excellent_rate": "15%" },
+    { "name": "教学三区", "total": 15, "exempt": 1, "need": 14, "fanhua_submitted": 4, "fanhua_rate": "28.6%", "doc_submitted": 6, "doc_rate": "42.9%", "excellent_rate": "25%" },
+    { "name": "C区", "total": 12, "exempt": 1, "need": 11, "fanhua_submitted": 2, "fanhua_rate": "18.2%", "doc_submitted": 3, "doc_rate": "27.3%", "excellent_rate": "10%" }
+  ],
+  "teachers": [
+    { "id": 1, "name": "童言", "real": "蔡雲霏", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 4.5, "aiVerdict": "优秀", "aiComment": "内圈迁徙场景丰富，外圈格子分区清晰，棋盘厚度表现到位，创意突出" },
+    { "id": 2, "name": "西柠", "real": "杨毛娜", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 4.1, "aiVerdict": "优秀", "aiComment": "色彩清新，动物形象生动，格子设计合理，但立体感可加强" },
+    { "id": 3, "name": "知夏", "real": "刘涛", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 4.3, "aiVerdict": "优秀", "aiComment": "色彩丰富和谐，迁徙场景层次分明，动物群体表现生动" },
+    { "id": 4, "name": "辣辣子", "real": "赵娜", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.9, "aiVerdict": "合格", "aiComment": "创意不错，但着色均匀度有待提高，部分细节不够精细" },
+    { "id": 5, "name": "遥愈", "real": "黄晟瑜", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 4.2, "aiVerdict": "优秀", "aiComment": "视角独特，干湿季场景衔接自然，文创设计感强" },
+    { "id": 6, "name": "粟米", "real": "白雪", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 4.4, "aiVerdict": "优秀", "aiComment": "棋盘设计完整精美，立体感突出，动物群体丰富，格子设计有创意" },
+    { "id": 7, "name": "南茜", "real": "李静", "district": "教学一区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.7, "aiVerdict": "合格", "aiComment": "创意不错，但画面完整度不足，前后空间关系表现不够清晰" },
+    { "id": 8, "name": "PuDing", "real": "刘聪", "district": "教学二区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 4.0, "aiVerdict": "优秀", "aiComment": "整体均衡，棋盘厚度表现良好，外圈行走格子设计清晰" },
+    { "id": 9, "name": "小圆", "real": "凌敏", "district": "教学三区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.5, "aiVerdict": "合格", "aiComment": "基本符合要求，但画面略显单薄，格子类型不够丰富" },
+    { "id": 10, "name": "格子", "real": "郭兰平", "district": "教学三区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.8, "aiVerdict": "合格", "aiComment": "棋盘布局完整，但着色略显粗糙，干湿季变化区分不够明显" },
+    { "id": 11, "name": "夏天老师", "real": "谢阳", "district": "教学三区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.6, "aiVerdict": "合格", "aiComment": "基本达标，但棋盘立体感不足，迁徙场景变化不够丰富" },
+    { "id": 12, "name": "米雪", "real": "丁珍晖", "district": "教学三区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.3, "aiVerdict": "合格", "aiComment": "勉强达标，画面略显单调，格子类型不全，需加强细节" },
+    { "id": 13, "name": "小璐老师", "real": "齐一璐", "district": "C区", "course": "棋盘上的迁徙之旅", "doc": true, "art": true, "exempt": false, "aiScore": 3.8, "aiVerdict": "合格", "aiComment": "色彩搭配不错，但棋盘厚度表现不够，内圈场景略显空旷" }
+  ],
+  "courses": [
+    { "name": "棋盘上的迁徙之旅", "total": 50, "exempt": 3, "submit": 47, "doc": 20, "art": 13 }
+  ],
+  "fanhua_scores": [
+    {
+      "teacher": "童言",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 4.5,
+      "dimensions": { "切题度": 4.5, "示范性": 4.5, "艺术质量": 4.0, "完整度": 4.5, "创意": 5.0 },
+      "verdict": "优秀",
+      "comment": "内圈迁徙场景丰富，外圈格子分区清晰，棋盘厚度表现到位，创意突出"
+    },
+    {
+      "teacher": "西柠",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 4.1,
+      "dimensions": { "切题度": 4.0, "示范性": 4.0, "艺术质量": 4.0, "完整度": 4.5, "创意": 4.0 },
+      "verdict": "优秀",
+      "comment": "色彩清新，动物形象生动，格子设计合理，但立体感可加强"
+    },
+    {
+      "teacher": "格子",
+      "district": "教学三区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 3.8,
+      "dimensions": { "切题度": 4.0, "示范性": 3.5, "艺术质量": 3.5, "完整度": 4.0, "创意": 4.0 },
+      "verdict": "合格",
+      "comment": "棋盘布局完整，但着色略显粗糙，干湿季变化区分不够明显"
+    },
+    {
+      "teacher": "小圆",
+      "district": "教学三区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-21",
+      "ai_score": 3.5,
+      "dimensions": { "切题度": 3.5, "示范性": 3.5, "艺术质量": 3.5, "完整度": 3.5, "创意": 3.5 },
+      "verdict": "合格",
+      "comment": "基本符合要求，但画面略显单薄，格子类型不够丰富"
+    },
+    {
+      "teacher": "知夏",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-21",
+      "ai_score": 4.3,
+      "dimensions": { "切题度": 4.5, "示范性": 4.0, "艺术质量": 4.5, "完整度": 4.0, "创意": 4.5 },
+      "verdict": "优秀",
+      "comment": "色彩丰富和谐，迁徙场景层次分明，动物群体表现生动"
+    },
+    {
+      "teacher": "辣辣子",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 3.9,
+      "dimensions": { "切题度": 4.0, "示范性": 4.0, "艺术质量": 3.5, "完整度": 4.0, "创意": 4.0 },
+      "verdict": "合格",
+      "comment": "创意不错，但着色均匀度有待提高，部分细节不够精细"
+    },
+    {
+      "teacher": "PuDing",
+      "district": "教学二区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-18",
+      "ai_score": 4.0,
+      "dimensions": { "切题度": 4.0, "示范性": 4.0, "艺术质量": 4.0, "完整度": 4.0, "创意": 4.0 },
+      "verdict": "优秀",
+      "comment": "整体均衡，棋盘厚度表现良好，外圈行走格子设计清晰"
+    },
+    {
+      "teacher": "夏天老师",
+      "district": "教学三区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 3.6,
+      "dimensions": { "切题度": 3.5, "示范性": 3.5, "艺术质量": 3.5, "完整度": 4.0, "创意": 3.5 },
+      "verdict": "合格",
+      "comment": "基本达标，但棋盘立体感不足，迁徙场景变化不够丰富"
+    },
+    {
+      "teacher": "遥愈",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-21",
+      "ai_score": 4.2,
+      "dimensions": { "切题度": 4.5, "示范性": 4.0, "艺术质量": 4.0, "完整度": 4.0, "创意": 4.5 },
+      "verdict": "优秀",
+      "comment": "视角独特，干湿季场景衔接自然，文创设计感强"
+    },
+    {
+      "teacher": "米雪",
+      "district": "教学三区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-21",
+      "ai_score": 3.3,
+      "dimensions": { "切题度": 3.5, "示范性": 3.0, "艺术质量": 3.0, "完整度": 3.5, "创意": 3.5 },
+      "verdict": "合格",
+      "comment": "勉强达标，画面略显单调，格子类型不全，需加强细节"
+    },
+    {
+      "teacher": "粟米",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-21",
+      "ai_score": 4.4,
+      "dimensions": { "切题度": 4.5, "示范性": 4.5, "艺术质量": 4.0, "完整度": 4.5, "创意": 4.5 },
+      "verdict": "优秀",
+      "comment": "棋盘设计完整精美，立体感突出，动物群体丰富，格子设计有创意"
+    },
+    {
+      "teacher": "南茜",
+      "district": "教学一区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 3.7,
+      "dimensions": { "切题度": 4.0, "示范性": 3.5, "艺术质量": 3.5, "完整度": 3.5, "创意": 4.0 },
+      "verdict": "合格",
+      "comment": "创意不错，但画面完整度不足，前后空间关系表现不够清晰"
+    },
+    {
+      "teacher": "小璐老师",
+      "district": "C区",
+      "course": "棋盘上的迁徙之旅",
+      "date": "2026-06-20",
+      "ai_score": 3.8,
+      "dimensions": { "切题度": 4.0, "示范性": 3.5, "艺术质量": 4.0, "完整度": 3.5, "创意": 4.0 },
+      "verdict": "合格",
+      "comment": "色彩搭配不错，但棋盘厚度表现不够，内圈场景略显空旷"
+    }
+  ]
+}
