@@ -1029,7 +1029,9 @@ function renderGallery(courseName) {
   title.textContent = `🖼️ ${courseName} — ${courseFanhua.length}位老师提交`;
 
   grid.innerHTML = courseFanhua.map(f => {
-    const artImg = f.image || (f.images && f.images[0]) || '';
+    const rawImg = f.image || (f.images && f.images[0]) || '';
+    // 统一转换为 GitHub Pages 可用的正斜杠 URL（站点根目录即 deploy 目录）
+    const artImg = rawImg ? rawImg.replace(/\\/g, '/').replace(/^deploy\//, '') : '';
     const isDup = f.is_duplicate;
 
     let imgHtml = '';
