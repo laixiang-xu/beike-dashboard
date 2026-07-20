@@ -1014,16 +1014,10 @@ function renderGallery(courseName) {
   const empty = document.getElementById('galleryEmpty');
   const title = document.getElementById('galleryTitle');
 
-  let courseTeachers = teacherData.filter(t => t.course === courseName && (t.doc || t.art));
+  // 从 fanhuaScores 中筛选出本课程的范画记录（优先使用JSON中的真实图片路径）
+  const courseFanhua = fanhuaScores.filter(f => f.course === courseName && (f.image || f.images));
 
-  // 按AI评分从高到低排序（如果有AI评分数据）
-  courseTeachers.sort((a, b) => {
-    const scoreA = a.aiScore || 0;
-    const scoreB = b.aiScore || 0;
-    return scoreB - scoreA; // 从高到低
-  });
-
-  if (courseTeachers.length === 0) {
+  if (courseFanhua.length === 0) {
     grid.innerHTML = '';
     empty.style.display = 'block';
     empty.textContent = `「${courseName}」暂无老师提交范画`;
@@ -1032,47 +1026,17 @@ function renderGallery(courseName) {
   }
 
   empty.style.display = 'none';
-  title.textContent = `🖼️ ${courseName} — ${courseTeachers.length}位老师提交`;
+  title.textContent = `🖼️ ${courseName} — ${courseFanhua.length}位老师提交`;
 
-  grid.innerHTML = courseTeachers.map(t => {
-    // 自动构建图片路径：images/{教师艺名}_{课程简称}.{jpg|jpeg|png}
-    // 课程简称：取课程名最后几个字，去掉"系统课"等前缀
-    const courseShort = t.course.replace(/^系统课|^体验课|^L\d+/g, '').trim();
-
-    // 尝试多种可能的文件扩展名
-    const possibleImages = [
-      `images/${t.name}_${courseShort}.jpg`,
-      `images/${t.name}_${courseShort}.jpeg`,
-      `images/${t.name}_${courseShort}.png`,
-      `images/${t.name}.jpg`,  // 简化命名：只用教师名
-      `images/${t.name}.jpeg`,
-      `images/${t.name}.png`,
-    ];
-
-    // 优先使用硬编码的图片映射（兼容旧数据）
-    const imgs = artImages[t.name] || {};
-    let artImg = imgs.art || '';
-
-    // 如果硬编码中没有，使用自动拼接的第一个可能路径
-    if (!artImg && t.art) {
-      artImg = possibleImages[0];  // 默认尝试 .jpg
-    }
-
-    const docImg = imgs.doc || '';
-    const hasArt = artImg && t.art;
-    const hasDoc = docImg && t.doc;
+  grid.innerHTML = courseFanhua.map(f => {
+    const artImg = f.image || (f.images && f.images[0]) || '';
+    const isDup = f.is_duplicate;
 
     let imgHtml = '';
-    if (hasArt) {
-      // 添加图片加载错误处理
-      imgHtml = `<img src="${artImg}" alt="${t.name}的范画"
-        onclick="openImage('${artImg}','${t.name} — 范画')"
+    if (artImg) {
+      imgHtml = `<img src="${artImg}" alt="${f.teacher}的范画"
+        onclick="openImage('${artImg}','${f.teacher} — ${f.course} 范画')"
         onerror="this.parentElement.innerHTML='<div style=\\'height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:var(--gray-100);color:var(--gray-500);\\'>📷 图片未上传<br><small style=\\'font-size:11px;margin-top:8px;\\'>预期路径：${artImg}</small></div>'"
-        style="cursor:pointer;width:100%;height:200px;object-fit:cover;">`;
-    } else if (hasDoc) {
-      imgHtml = `<img src="${docImg}" alt="${t.name}的备课文档"
-        onclick="openImage('${docImg}','${t.name} — 备课文档')"
-        onerror="this.parentElement.innerHTML='<div style=\\'height:200px;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-500);\\'>📷 文档图片未上传</div>'"
         style="cursor:pointer;width:100%;height:200px;object-fit:cover;">`;
     } else {
       imgHtml = `<div style="height:200px;display:flex;align-items:center;justify-content:center;background:var(--gray-100);color:var(--gray-500);">📷 未提交范画</div>`;
@@ -1080,23 +1044,25 @@ function renderGallery(courseName) {
 
     // 显示AI评分（如果有）
     let aiScoreBadge = '';
-    if (t.aiScore !== undefined && t.aiScore > 0) {
-      const scoreColor = t.aiScore >= 4.0 ? 'var(--success)' : t.aiScore >= 3.0 ? 'var(--primary)' : 'var(--warning)';
-      aiScoreBadge = `<span class="badge" style="background:${scoreColor};color:white;margin-left:4px;">⭐ ${t.aiScore}</span>`;
-    } else if (t.aiScore === 0) {
-      aiScoreBadge = `<span class="badge" style="background:var(--danger);color:white;margin-left:4px;">⚠️ 问题</span>`;
+    if (f.ai_score !== undefined && f.ai_score > 0) {
+      const scoreColor = f.ai_score >= 4.0 ? 'var(--success)' : f.ai_score >= 3.0 ? 'var(--primary)' : 'var(--warning)';
+      aiScoreBadge = `<span class="badge" style="background:${scoreColor};color:white;margin-left:4px;">⭐ ${f.ai_score}</span>`;
     }
+
+    // 重复标记
+    const dupBadge = isDup
+      ? `<span class="badge" style="background:var(--danger);color:white;margin-left:4px;">🚨 重复</span>`
+      : '';
 
     return `<div class="gallery-card">
       ${imgHtml}
       <div class="gallery-info">
-        <div class="teacher">${t.name} <span style="font-size:12px;color:var(--gray-500);">${t.real}</span> ${aiScoreBadge}</div>
+        <div class="teacher">${f.teacher} ${aiScoreBadge} ${dupBadge}</div>
         <div class="meta">
-          <span>🏫 ${t.district}</span>
-          ${t.doc ? '<span class="badge badge-success">📄 文档</span>' : ''}
-          ${t.art ? '<span class="badge badge-success">🎨 范画</span>' : ''}
+          <span>🏫 ${f.district || '未分配'}</span>
+          <span class="badge badge-success">🎨 范画</span>
         </div>
-        ${t.aiComment ? `<div style="font-size:12px;color:var(--gray-600);margin-top:6px;line-height:1.4;">${t.aiComment.substring(0,50)}...</div>` : ''}
+        ${f.comment ? `<div style="font-size:12px;color:var(--gray-600);margin-top:6px;line-height:1.4;">${f.comment.substring(0,50)}...</div>` : ''}
       </div>
     </div>`;
   }).join('');

@@ -1,7 +1,7 @@
 {
   "week": "2026-07-20",
   "week_label": "2026年7月第三周",
-  "generated_at": "2026-07-20 17:35:05",
+  "generated_at": "2026-07-20 17:47:03",
   "summary": {
     "total_records": 1403,
     "exempt_count": 0,
@@ -15637,7 +15637,12 @@
       "teacher": "野兔",
       "district": "教学三区",
       "course": "《愿望流星》",
-      "date": "2026-07-10"
+      "date": "2026-07-10",
+      "image": "deploy\\images\\野兔_《愿望流星》_HY2gbzAA.jpg",
+      "images": [
+        "deploy\\images\\野兔_《愿望流星》_HY2gbzAA.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15653,7 +15658,12 @@
       "teacher": "拐拐",
       "district": "教学二区",
       "course": "《愿望流星》",
-      "date": "2026-07-09"
+      "date": "2026-07-09",
+      "image": "deploy\\images\\拐拐_《愿望流星》_O8bPbbyB.jpg",
+      "images": [
+        "deploy\\images\\拐拐_《愿望流星》_O8bPbbyB.jpg"
+      ],
+      "is_duplicate": true
     },
     {
       "ai_score": 3.5,
@@ -15669,7 +15679,12 @@
       "teacher": "辣辣子",
       "district": "教学一区",
       "course": "《愿望流星》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\辣辣子_《愿望流星》_EkOjb48l.jpg",
+      "images": [
+        "deploy\\images\\辣辣子_《愿望流星》_EkOjb48l.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15685,7 +15700,12 @@
       "teacher": "晴天老师",
       "district": "教学一区",
       "course": "《愿望流星》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\晴天老师_《愿望流星》_XCdrbK5X.jpg",
+      "images": [
+        "deploy\\images\\晴天老师_《愿望流星》_XCdrbK5X.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15701,7 +15721,12 @@
       "teacher": "露晨",
       "district": "教学一区",
       "course": "《愿望流星》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\露晨_《愿望流星》_K9OibN7L.jpg",
+      "images": [
+        "deploy\\images\\露晨_《愿望流星》_K9OibN7L.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15717,7 +15742,12 @@
       "teacher": "淘7",
       "district": "教学一区",
       "course": "《愿望流星》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\淘7_《愿望流星》_YTNvbDZl.jpg",
+      "images": [
+        "deploy\\images\\淘7_《愿望流星》_YTNvbDZl.jpg"
+      ],
+      "is_duplicate": true
     },
     {
       "ai_score": 3.5,
@@ -15733,7 +15763,12 @@
       "teacher": "辣辣子",
       "district": "教学一区",
       "course": "《模拟校园-同学你好》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\辣辣子_《模拟校园-同学你好》_PVcdbKOs.jpg",
+      "images": [
+        "deploy\\images\\辣辣子_《模拟校园-同学你好》_PVcdbKOs.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15749,7 +15784,12 @@
       "teacher": "爱神",
       "district": "教学一区",
       "course": "《色彩王国之旅》",
-      "date": "2026-07-06"
+      "date": "2026-07-06",
+      "image": "deploy\\images\\爱神_《色彩王国之旅》_SO3TbyEo.jpg",
+      "images": [
+        "deploy\\images\\爱神_《色彩王国之旅》_SO3TbyEo.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15765,7 +15805,12 @@
       "teacher": "辣辣子",
       "district": "教学一区",
       "course": "《色彩王国之旅》",
-      "date": "2026-07-12"
+      "date": "2026-07-12",
+      "image": "deploy\\images\\辣辣子_《色彩王国之旅》_CYzdbEqT.jpg",
+      "images": [
+        "deploy\\images\\辣辣子_《色彩王国之旅》_CYzdbEqT.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15781,7 +15826,12 @@
       "teacher": "辣辣子",
       "district": "教学一区",
       "course": "《塔楼建筑》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\辣辣子_《塔楼建筑》_SkVNbx3N.jpg",
+      "images": [
+        "deploy\\images\\辣辣子_《塔楼建筑》_SkVNbx3N.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15797,7 +15847,12 @@
       "teacher": "露晨",
       "district": "教学一区",
       "course": "《色彩王国之旅》",
-      "date": "2026-07-11"
+      "date": "2026-07-11",
+      "image": "deploy\\images\\露晨_《色彩王国之旅》_REDXb3gk.jpg",
+      "images": [
+        "deploy\\images\\露晨_《色彩王国之旅》_REDXb3gk.jpg"
+      ],
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15813,7 +15868,12 @@
       "teacher": "露晨",
       "district": "教学一区",
       "course": "《塔楼建筑》",
-      "date": "2026-07-08"
+      "date": "2026-07-08",
+      "image": "deploy\\images\\露晨_《塔楼建筑》_HEG4b98P.jpg",
+      "images": [
+        "deploy\\images\\露晨_《塔楼建筑》_HEG4b98P.jpg"
+      ],
+      "is_duplicate": false
     }
   ]
 }
