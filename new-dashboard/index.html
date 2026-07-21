@@ -562,14 +562,36 @@ tr.selected td{background:#FFF8E1;}
 
   <!-- 各学区分析 -->
   <div class="panel">
-    <div class="panel-hd"><h2>📝 各学区情况分析</h2></div>
+    <div class="panel-hd">
+      <h2>📝 各学区情况分析</h2>
+      <button onclick="toggleSectionEdit('districtAnalysis')" id="editBtn-districtAnalysis" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text2);">✏️ 编辑</button>
+    </div>
     <div class="panel-bd" id="reportDistrictAnalysis" style="line-height:2;font-size:13px;"></div>
+    <div style="display:none;padding:0 18px 18px;" id="editor-districtAnalysis">
+      <textarea id="text-districtAnalysis" style="width:100%;min-height:140px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:13px;line-height:2;font-family:inherit;resize:vertical;outline:none;"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button onclick="saveSectionEdit('districtAnalysis')" style="padding:6px 16px;background:var(--accent);border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">保存</button>
+        <button onclick="cancelSectionEdit('districtAnalysis')" style="padding:6px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text2);">取消</button>
+        <button onclick="resetSectionEdit('districtAnalysis')" style="padding:6px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text3);">重置</button>
+      </div>
+    </div>
   </div>
 
   <!-- 行动建议 -->
   <div class="panel" style="border-left:4px solid var(--success);">
-    <div class="panel-hd"><h2>✅ 行动建议</h2></div>
+    <div class="panel-hd">
+      <h2>✅ 行动建议</h2>
+      <button onclick="toggleSectionEdit('actions')" id="editBtn-actions" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text2);">✏️ 编辑</button>
+    </div>
     <div class="panel-bd" id="reportActions" style="line-height:2.2;font-size:13px;"></div>
+    <div style="display:none;padding:0 18px 18px;" id="editor-actions">
+      <textarea id="text-actions" style="width:100%;min-height:140px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:13px;line-height:2;font-family:inherit;resize:vertical;outline:none;"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button onclick="saveSectionEdit('actions')" style="padding:6px 16px;background:var(--accent);border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">保存</button>
+        <button onclick="cancelSectionEdit('actions')" style="padding:6px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text2);">取消</button>
+        <button onclick="resetSectionEdit('actions')" style="padding:6px 16px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text3);">重置</button>
+      </div>
+    </div>
   </div>
 
   <!-- 附：课程明细 -->
@@ -1367,8 +1389,9 @@ function renderReport() {
     <td>—</td><td>—</td><td>—</td>
   </tr>`;
 
-  // 各学区情况分析
-  document.getElementById('reportDistrictAnalysis').innerHTML = topDist.map(([d, v]) => {
+  // 各学区情况分析（检查是否有手动保存版本）
+  const savedAnalysis = localStorage.getItem('hll_report_districtAnalysis_' + week);
+  const autoAnalysis = topDist.map(([d, v]) => {
     const dFan  = allTeachers.filter(t=>t.district===d&&t.has_fanhua).length;
     const dNeed = v.total - (v['免检']||0);
     const dFanR = dNeed ? (dFan/dNeed*100).toFixed(1) : '0.0';
@@ -1380,20 +1403,26 @@ function renderReport() {
       : `范画提交率 <strong style="color:${color}">${dFanR}%</strong>，明显低于平均水平，需要学区经理重点跟进。`;
     return `<p>• <strong>${d}</strong>：${desc}</p>`;
   }).join('');
+  document.getElementById('reportDistrictAnalysis').innerHTML = savedAnalysis || autoAnalysis;
+  document.getElementById('text-districtAnalysis').value =
+    (savedAnalysis || autoAnalysis).replace(/<[^>]+>/g,'').replace(/•/g,'•').trim();
 
-  // 行动建议
+  // 行动建议（检查是否有手动保存版本）
   const lowDistricts = topDist.filter(([d,v]) => {
     const dFan = allTeachers.filter(t=>t.district===d&&t.has_fanhua).length;
     const dNeed = v.total-(v['免检']||0);
     return dNeed && (dFan/dNeed*100) < 50;
   }).map(([d])=>d);
 
-  document.getElementById('reportActions').innerHTML = `
-    <p>1️⃣ <strong>整体要求</strong>：所有学区范画提交率目标 ≥ 80%，备课文档提交率目标 ≥ 90%。</p>
+  const savedActions = localStorage.getItem('hll_report_actions_' + week);
+  const autoActions = `<p>1️⃣ <strong>整体要求</strong>：所有学区范画提交率目标 ≥ 80%，备课文档提交率目标 ≥ 90%。</p>
     ${lowDistricts.length ? `<p>2️⃣ <strong>重点督导</strong>：<span style="color:var(--danger)">${lowDistricts.join('、')}</span> 提交率偏低，请学区经理本周内逐一电话确认原因并给出整改计划。</p>` : '<p>2️⃣ <strong>整体良好</strong>：各学区提交率均在合理区间，保持现有节奏。</p>'}
     <p>3️⃣ <strong>质量提升</strong>：有范画提交的老师中，鼓励提升范画质量，目标 AI 评分 ≥ 4.5（优秀）比例达到 20% 以上。</p>
     <p>4️⃣ <strong>下周计划</strong>：周五前完成本周备课，周日 23:59 前提交，迟交超过 3 次将纳入月度绩效考核。</p>
     <p>5️⃣ <strong>数据更新</strong>：下周数据更新后，本报告自动刷新，可直接发送链接给各学区经理查阅。</p>`;
+  document.getElementById('reportActions').innerHTML = savedActions || autoActions;
+  document.getElementById('text-actions').value =
+    (savedActions || autoActions).replace(/<[^>]+>/g,'').trim();
 
   // 课程明细
   document.getElementById('reportCourseBody').innerHTML = Object.entries(DATA.by_course||{})
@@ -1461,6 +1490,60 @@ function resetReportEdit() {
   localStorage.removeItem('hll_report_conclusion_' + week);
   renderReport();
   if (reportEditMode) toggleReportEdit();
+}
+
+// ════ SECTION EDIT (各学区分析 & 行动建议) ════
+const sectionEditState = {};
+
+function toggleSectionEdit(key) {
+  const isOpen = sectionEditState[key];
+  sectionEditState[key] = !isOpen;
+  const editor  = document.getElementById('editor-' + key);
+  const display = document.getElementById(key === 'districtAnalysis' ? 'reportDistrictAnalysis' : 'reportActions');
+  const btn     = document.getElementById('editBtn-' + key);
+
+  if (!isOpen) {
+    // 打开编辑器，同步当前显示内容到textarea
+    const textarea = document.getElementById('text-' + key);
+    textarea.value = display.innerHTML.replace(/<br\s*\/?>/gi,'\n').replace(/<\/p>/gi,'\n').replace(/<[^>]+>/g,'').trim();
+    editor.style.display = 'block';
+    display.style.opacity = '0.4';
+    btn.textContent = '✅ 完成';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'var(--dark)';
+    btn.style.border = 'none';
+  } else {
+    editor.style.display = 'none';
+    display.style.opacity = '1';
+    btn.textContent = '✏️ 编辑';
+    btn.style.background = '';
+    btn.style.color = '';
+    btn.style.border = '1px solid var(--border)';
+  }
+}
+
+function saveSectionEdit(key) {
+  const week    = DATA?.meta?.week || '本周';
+  const text    = document.getElementById('text-' + key).value;
+  const html    = text.split('\n').map(l => l.trim() ? '<p>' + l + '</p>' : '').join('');
+  const displayId = key === 'districtAnalysis' ? 'reportDistrictAnalysis' : 'reportActions';
+  document.getElementById(displayId).innerHTML = html;
+  localStorage.setItem('hll_report_' + key + '_' + week, html);
+  sectionEditState[key] = true; // force close
+  toggleSectionEdit(key);
+}
+
+function cancelSectionEdit(key) {
+  sectionEditState[key] = true; // force close
+  toggleSectionEdit(key);
+}
+
+function resetSectionEdit(key) {
+  const week = DATA?.meta?.week || '本周';
+  localStorage.removeItem('hll_report_' + key + '_' + week);
+  sectionEditState[key] = true;
+  toggleSectionEdit(key);
+  renderReport(); // regenerate
 }
 
 // ════ MODAL ════
