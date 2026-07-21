@@ -211,6 +211,28 @@ tr.selected td{background:#FFF8E1;}
     </div>
   </div>
 
+  <!-- 学区卡片概览（图一样式） -->
+  <div class="panel">
+    <div class="panel-hd">
+      <h2>学区完成概览</h2>
+      <span class="hint">点击学区卡片查看小组详情 →</span>
+    </div>
+    <div class="panel-bd">
+      <div id="districtCardGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;"></div>
+    </div>
+  </div>
+
+  <!-- 学区下钻面板（点击卡片后展开） -->
+  <div id="districtDrillPanel" style="display:none;margin-bottom:16px;">
+    <div class="panel" style="border:2px solid var(--accent);">
+      <div class="panel-hd" style="background:var(--dark);color:#fff;">
+        <h2 id="drillTitle" style="color:#fff;">学区详情</h2>
+        <button onclick="closeDistrictDrill()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;line-height:1;">×</button>
+      </div>
+      <div style="padding:12px 16px;" id="drillGroupList"></div>
+    </div>
+  </div>
+
   <!-- 学区统计完整表格 -->
   <div class="panel">
     <div class="panel-hd">
@@ -237,17 +259,6 @@ tr.selected td{background:#FFF8E1;}
           <tbody id="districtBody"></tbody>
         </table>
       </div>
-    </div>
-  </div>
-
-  <!-- 学区下钻面板（点击学区行后展开） -->
-  <div id="districtDrillPanel" style="display:none;margin-bottom:16px;">
-    <div class="panel" style="border:2px solid var(--accent);">
-      <div class="panel-hd" style="background:var(--dark);color:#fff;">
-        <h2 id="drillTitle" style="color:#fff;">学区详情</h2>
-        <button onclick="closeDistrictDrill()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;line-height:1;">×</button>
-      </div>
-      <div style="padding:12px 16px;" id="drillGroupList"></div>
     </div>
   </div>
 
@@ -483,13 +494,22 @@ tr.selected td{background:#FFF8E1;}
     <div style="display:flex;gap:8px;">
       <button class="tbtn tbtn-outline" style="color:var(--dark);background:var(--surface);border:1px solid var(--border);" onclick="window.print()">🖨️ 打印/导出PDF</button>
       <button class="tbtn tbtn-accent" onclick="exportData()">📥 下载Excel</button>
+      <button class="tbtn tbtn-outline" id="reportEditBtn" style="color:var(--dark);background:var(--surface);border:1px solid var(--border);" onclick="toggleReportEdit()">✏️ 编辑结论</button>
     </div>
   </div>
 
-  <!-- 整体结论 -->
+  <!-- 整体结论（可编辑） -->
   <div class="panel" style="border-left:4px solid var(--accent);">
-    <div class="panel-hd"><h2>📌 本期整体结论</h2></div>
+    <div class="panel-hd"><h2>📌 本期整体结论</h2><span class="hint" id="reportEditHint">点击"编辑结论"可修改文字</span></div>
     <div class="panel-bd" id="reportConclusion" style="line-height:2;font-size:13px;"></div>
+    <div style="display:none;padding:0 18px 18px;" id="reportConclusionEditor">
+      <textarea id="reportConclusionText" style="width:100%;min-height:160px;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:13px;line-height:2;font-family:inherit;resize:vertical;outline:none;"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button onclick="saveReportEdit()" style="padding:7px 18px;background:var(--accent);border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">保存</button>
+        <button onclick="cancelReportEdit()" style="padding:7px 18px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text2);">取消</button>
+        <button onclick="resetReportEdit()" style="padding:7px 18px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text3);">重置为自动生成</button>
+      </div>
+    </div>
   </div>
 
   <!-- 对比数据表（参考年报格式） -->
@@ -662,9 +682,37 @@ function renderOverview() {
   document.getElementById('k-qualified').textContent   = qualRate;
   document.getElementById('k-excellent').textContent   = exclRate;
 
+  renderDistrictCards();
   renderDistrictTable();
   renderDistrictChart();
   renderStatusChart();
+}
+
+function renderDistrictCards() {
+  const skip = ['-','未知'];
+  const grid = document.getElementById('districtCardGrid');
+  if (!grid) return;
+  const entries = Object.entries(DATA.by_district)
+    .filter(([d]) => !skip.includes(d))
+    .sort((a,b) => b[1].total - a[1].total);
+
+  grid.innerHTML = entries.map(([d, v]) => {
+    const done = (v['已完成']||0)+(v['迟交完成']||0)+(v['免检']||0);
+    const rate = v.total ? (done/v.total*100).toFixed(1) : '0.0';
+    const isActive = activeDrillDistrict === d;
+    return `<div onclick="toggleDistrictDrill('${d}')" style="background:var(--surface);border-radius:var(--radius);padding:18px 16px;border:2px solid ${isActive ? 'var(--accent)' : 'var(--border)'};cursor:pointer;transition:all .2s;background:${isActive ? 'var(--surface2)' : 'var(--surface)'}">
+      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px;">${d}</div>
+      <div style="font-size:30px;font-weight:800;line-height:1;color:var(--dark);">${rate}<span style="font-size:14px;font-weight:500;">%</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">完成率</div>
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:10px;"><div style="height:100%;background:var(--accent);border-radius:2px;width:${rate}%"></div></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <span style="font-size:10px;background:#E8F5EE;color:var(--success);padding:2px 7px;border-radius:10px;font-weight:600;">已完成${done}</span>
+        <span style="font-size:10px;background:#FFF3CD;color:var(--warning);padding:2px 7px;border-radius:10px;font-weight:600;">迟交${v['迟交完成']||0}</span>
+        <span style="font-size:10px;background:#EEF2FB;color:var(--partial);padding:2px 7px;border-radius:10px;font-weight:600;">部分${v['部分提交']||0}</span>
+      </div>
+      <div style="font-size:11px;color:var(--danger);font-weight:600;margin-top:6px;">未交 ${v['未提交']||0}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderDistrictTable() {
@@ -827,50 +875,27 @@ function renderCoursePanel() {
   const d = DATA.by_course[selectedCourse];
   if (!d) return;
 
-  document.getElementById('cpFilters').style.display = 'flex';
   document.getElementById('cpEmpty').style.display = 'none';
-
   document.getElementById('cpTitle').textContent = selectedCourse;
   const fan = d.fanhua_count||0;
   const rate = d.total ? (d['已完成']/d.total*100).toFixed(1) : '0.0';
   document.getElementById('cpSub').textContent = `完成率 ${rate}% · ${d.total}人 · ${fan}张范画`;
-
   document.getElementById('cpStats').innerHTML = `
     <span style="color:var(--success)">✓ 已完成 ${d['已完成']||0}</span>
     <span style="color:var(--danger)">✗ 未完成 ${d['未完成']||0}</span>
     <span style="color:var(--partial)">📷 范画 ${fan}</span>`;
 
-  const statusF = document.getElementById('cpStatusFilter')?.value||'all';
-  const nameQ   = (document.getElementById('cpNameSearch')?.value||'').toLowerCase();
+  // 只展示有范画的，按AI评分从高到低
+  const withFanhua = [...(d.teachers||[])].filter(t=>t.has_fanhua)
+    .sort((a,b) => (b.ai_score??-1)-(a.ai_score??-1));
 
-  let teachers = [...(d.teachers||[])];
-  if (statusF==='has_fanhua') teachers = teachers.filter(t=>t.has_fanhua);
-  else if (statusF==='no_fanhua') teachers = teachers.filter(t=>!t.has_fanhua);
-  else if (statusF!=='all') teachers = teachers.filter(t=>t.status===statusF);
-  if (nameQ) teachers = teachers.filter(t=>t.name.toLowerCase().includes(nameQ));
-  teachers.sort((a,b) => (b.ai_score??-1)-(a.ai_score??-1));
-
-  // Compact teacher list
-  document.getElementById('cpTeacherList').innerHTML = teachers.length
-    ? teachers.map(t => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">
-        <span style="font-size:12px;font-weight:700;min-width:50px;">${t.name}</span>
-        <span style="font-size:10px;color:var(--text3);">${t.district||''}</span>
-        <span>${statusBadge(t.status)}</span>
-        <span>${t.ai_score!=null ? '<span style="font-size:10px;background:var(--accent);padding:1px 6px;border-radius:8px;font-weight:700;">'+t.ai_score+'</span>' : '<span style="font-size:10px;color:var(--text3);">待评</span>'}</span>
-        <span>${t.has_fanhua ? '<span class="icon-ok">✓</span>' : '<span class="icon-x">✗</span>'}</span>
-      </div>`).join('')
-    : '<div class="empty" style="padding:16px;"><p>无符合条件的老师</p></div>';
-
-  // Fanhua grid (sorted by score)
-  const withFanhua = teachers.filter(t=>t.has_fanhua);
   const label = document.getElementById('cpFanhuaLabel');
   const grid  = document.getElementById('cpFanhuaGrid');
   if (withFanhua.length) {
-    label.textContent = `📷 范画 (${withFanhua.length}张，按评分排序)`;
+    label.textContent = `📷 范画 ${withFanhua.length}张（按评分排序）`;
     grid.innerHTML = withFanhua.map(t => {
       const imgH = t.fanhua_url
-        ? `<img src="${t.fanhua_url}" loading="lazy" onclick="openModal('${t.fanhua_url}','${t.name}')" onerror="this.parentElement.innerHTML='<div class=fc-ph><span>🖼</span><span>加载失败</span></div>'">`
+        ? `<img src="${t.fanhua_url}" loading="lazy" onclick="openModal('${t.fanhua_url}')" onerror="this.parentElement.innerHTML='<div class=fc-ph><span>🖼</span><span>加载失败</span></div>'">`
         : `<div class="fc-ph"><span>🖼</span><span>无图片</span></div>`;
       return `<div class="fc">
         ${imgH}
@@ -883,7 +908,7 @@ function renderCoursePanel() {
     }).join('');
   } else {
     label.textContent = '';
-    grid.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:8px 0;">该筛选条件下无范画</div>';
+    grid.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:20px 0;text-align:center;">该课程暂无范画提交</div>';
   }
 }
 
@@ -1104,6 +1129,7 @@ function toggleDistrictDrill(district) {
     return;
   }
   activeDrillDistrict = district;
+  renderDistrictCards();
   renderDistrictTable();
   document.getElementById('drillTitle').textContent = district + ' — 小组详情';
   panel.style.display = 'block';
@@ -1142,6 +1168,7 @@ function toggleDistrictDrill(district) {
 function closeDistrictDrill() {
   activeDrillDistrict = null;
   document.getElementById('districtDrillPanel').style.display = 'none';
+  renderDistrictCards();
   renderDistrictTable();
 }
 
@@ -1253,14 +1280,18 @@ function renderReport() {
   const bestFan  = topDist[0] ? (allTeachers.filter(t=>t.district===topDist[0][0]&&t.has_fanhua).length / (topDist[0][1].total||1)*100).toFixed(1) : '0.0';
   const worstFan = topDist[topDist.length-1] ? (allTeachers.filter(t=>t.district===topDist[topDist.length-1][0]&&t.has_fanhua).length / (topDist[topDist.length-1][1].total||1)*100).toFixed(1) : '0.0';
 
-  document.getElementById('reportConclusion').innerHTML = `
-    <p>📅 <strong>${week}</strong>，全校共排课 <strong>${total.toLocaleString()}</strong> 节，免检 ${exempt} 节，应提交 <strong>${need.toLocaleString()}</strong> 节。</p>
-    <p>📷 范画提交率：<strong style="color:${fanColor}">${fanRate}%</strong>（${fanhua}/${need}），整体处于 <strong style="color:${fanColor}">${fanLevel}</strong> 水平。</p>
-    <p>📄 备课文档提交率：<strong>${docRate}%</strong>（${doc}/${need}）。</p>
-    <p>✅ 双项完成率（文档+范画均提交）：<strong>${doneRate}%</strong>（${done}/${total}）。</p>
-    <br>
-    <p>🏆 本周范画提交率最高学区：<strong style="color:var(--success)">${bestDistrict}</strong>（${bestFan}%）</p>
-    <p>⚠️  本周范画提交率最低学区：<strong style="color:var(--danger)">${worstDistrict}</strong>（${worstFan}%），需重点关注。</p>`;
+  // 自动生成结论文字（先检查是否有手动保存的版本）
+  const savedConclusion = localStorage.getItem('hll_report_conclusion_' + week);
+  const autoConclusion = `📅 <strong>${week}</strong>，全校共排课 <strong>${total.toLocaleString()}</strong> 节，免检 ${exempt} 节，应提交 <strong>${need.toLocaleString()}</strong> 节。<br>
+📷 范画提交率：<strong style="color:${fanColor}">${fanRate}%</strong>（${fanhua}/${need}），整体处于 <strong style="color:${fanColor}">${fanLevel}</strong> 水平。<br>
+📄 备课文档提交率：<strong>${docRate}%</strong>（${doc}/${need}）。<br>
+✅ 双项完成率（文档+范画均提交）：<strong>${doneRate}%</strong>（${done}/${total}）。<br><br>
+🏆 本周范画提交率最高学区：<strong style="color:var(--success)">${bestDistrict}</strong>（${bestFan}%）<br>
+⚠️ 本周范画提交率最低学区：<strong style="color:var(--danger)">${worstDistrict}</strong>（${worstFan}%），需重点关注。`;
+
+  document.getElementById('reportConclusion').innerHTML = savedConclusion || autoConclusion;
+  document.getElementById('reportConclusionText').value =
+    (savedConclusion || autoConclusion).replace(/<br>/g,'\n').replace(/<[^>]+>/g,'').trim();
 
   // 对比表格
   const colorCell = (rate) => {
@@ -1363,6 +1394,50 @@ function renderReport() {
         <td>${done}</td>
       </tr>`;
     }).join('');
+}
+
+// ════ REPORT EDIT ════
+let reportEditMode = false;
+
+function toggleReportEdit() {
+  reportEditMode = !reportEditMode;
+  const btn = document.getElementById('reportEditBtn');
+  const editor = document.getElementById('reportConclusionEditor');
+  const display = document.getElementById('reportConclusion');
+  const hint = document.getElementById('reportEditHint');
+  if (reportEditMode) {
+    btn.textContent = '✅ 退出编辑';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'var(--dark)';
+    editor.style.display = 'block';
+    display.style.display = 'none';
+    if(hint) hint.textContent = '编辑下方文本框，点击保存生效';
+  } else {
+    btn.textContent = '✏️ 编辑结论';
+    btn.style.background = '';
+    btn.style.color = '';
+    editor.style.display = 'none';
+    display.style.display = 'block';
+    if(hint) hint.textContent = '点击"编辑结论"可修改文字';
+  }
+}
+
+function saveReportEdit() {
+  const text = document.getElementById('reportConclusionText').value;
+  const week = DATA?.meta?.week || '本周';
+  const html = text.split('\n').map(l => l.trim() ? '<p>'+l+'</p>' : '<br>').join('');
+  document.getElementById('reportConclusion').innerHTML = html;
+  localStorage.setItem('hll_report_conclusion_' + week, html);
+  toggleReportEdit();
+}
+
+function cancelReportEdit() { toggleReportEdit(); }
+
+function resetReportEdit() {
+  const week = DATA?.meta?.week || '本周';
+  localStorage.removeItem('hll_report_conclusion_' + week);
+  renderReport();
+  if (reportEditMode) toggleReportEdit();
 }
 
 // ════ MODAL ════
