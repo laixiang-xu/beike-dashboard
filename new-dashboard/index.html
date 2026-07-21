@@ -177,27 +177,42 @@ tr.selected td{background:#FFF8E1;}
 <!-- ══ TAB1: 总览看板 ══ -->
 <div class="page active" id="page-overview">
 
-  <!-- 6 KPI cards -->
-  <div class="kpi-row">
+  <!-- 9 KPI cards -->
+  <div class="kpi-row" style="grid-template-columns:repeat(9,1fr);">
     <div class="kpi k-dark">
-      <div class="kl">总排课记录</div>
-      <div class="kv" id="k-total">—</div>
+      <div class="kl">应提交记录</div>
+      <div class="kv" id="k-need">—</div>
       <div class="ks" id="k-week">加载中</div>
     </div>
     <div class="kpi">
-      <div class="kl">免检老师</div>
-      <div class="kv" id="k-exempt" style="color:var(--success)">—</div>
-      <div class="ks">已免检课程数</div>
+      <div class="kl">已提交记录</div>
+      <div class="kv" id="k-submitted" style="color:var(--success)">—</div>
+      <div class="ks">文档或范画任一已提交</div>
     </div>
-    <div class="kpi k-accent">
-      <div class="kl">应提交记录</div>
-      <div class="kv" id="k-need">—</div>
-      <div class="ks">扣除免检后</div>
+    <div class="kpi">
+      <div class="kl">备课文档已提交</div>
+      <div class="kv" id="k-doc" style="color:var(--partial)">—</div>
+      <div class="ks" id="k-doc-count-sub">提交数</div>
     </div>
     <div class="kpi">
       <div class="kl">范画已提交</div>
       <div class="kv" id="k-fanhua" style="color:var(--partial)">—</div>
-      <div class="ks" id="k-fanhua-rate">提交率 —</div>
+      <div class="ks" id="k-fanhua-count-sub">提交数</div>
+    </div>
+    <div class="kpi">
+      <div class="kl">备课文档提交率</div>
+      <div class="kv" id="k-doc-rate" style="color:var(--success)">—</div>
+      <div class="ks">文档 / 应提交</div>
+    </div>
+    <div class="kpi k-accent">
+      <div class="kl">范画提交率</div>
+      <div class="kv" id="k-fanhua-rate">—</div>
+      <div class="ks">范画 / 应提交</div>
+    </div>
+    <div class="kpi">
+      <div class="kl">总体完成率</div>
+      <div class="kv" id="k-done-rate" style="color:var(--success)">—</div>
+      <div class="ks">文档+范画均提交</div>
     </div>
     <div class="kpi">
       <div class="kl">范画合格率</div>
@@ -664,23 +679,29 @@ function renderOverview() {
   const exempt  = ov['免检'] || 0;
   const need    = total - exempt;
   const fanhua  = Object.values(DATA.by_course || {}).reduce((s,c) => s+(c.fanhua_count||0), 0);
+  const doc     = allTeachers.filter(t => t.has_doc).length;
+  const submitted = allTeachers.filter(t => t.has_doc || t.has_fanhua).length;
   const done    = (ov['已完成']||0) + (ov['迟交完成']||0) + (ov['免检']||0);
 
-  // AI stats (need individual records)
-  const scored  = allTeachers.filter(t => t.ai_score != null && t.ai_score > 0);
-  const qualified = scored.filter(t => t.ai_score >= 3.0).length;
-  const excellent = scored.filter(t => t.ai_score >= 4.5).length;
-  const qualRate = scored.length ? (qualified/scored.length*100).toFixed(1)+'%' : '待评分';
-  const exclRate = scored.length ? (excellent/scored.length*100).toFixed(1)+'%' : '待评分';
+  const fanRate  = need ? (fanhua/need*100).toFixed(1) : '0.0';
+  const docRate  = need ? (doc/need*100).toFixed(1) : '0.0';
+  const doneRate = total ? (done/total*100).toFixed(1) : '0.0';
 
-  document.getElementById('k-total').textContent   = total.toLocaleString();
-  document.getElementById('k-week').textContent    = DATA.meta.week || '';
-  document.getElementById('k-exempt').textContent  = exempt;
-  document.getElementById('k-need').textContent    = need.toLocaleString();
-  document.getElementById('k-fanhua').textContent  = fanhua;
-  document.getElementById('k-fanhua-rate').textContent = '提交率 ' + (need ? (fanhua/need*100).toFixed(1) : '0.0') + '%';
-  document.getElementById('k-qualified').textContent   = qualRate;
-  document.getElementById('k-excellent').textContent   = exclRate;
+  // AI stats
+  const scored    = allTeachers.filter(t => t.ai_score != null && t.ai_score > 0);
+  const qualRate  = scored.length ? (scored.filter(t=>t.ai_score>=3.0).length/scored.length*100).toFixed(1)+'%' : '待评分';
+  const exclRate  = scored.length ? (scored.filter(t=>t.ai_score>=4.5).length/scored.length*100).toFixed(1)+'%' : '待评分';
+
+  document.getElementById('k-week').textContent         = DATA.meta.week || '';
+  document.getElementById('k-need').textContent         = need.toLocaleString();
+  document.getElementById('k-submitted').textContent    = submitted.toLocaleString();
+  document.getElementById('k-doc').textContent          = doc.toLocaleString();
+  document.getElementById('k-fanhua').textContent       = fanhua.toLocaleString();
+  document.getElementById('k-doc-rate').textContent     = docRate + '%';
+  document.getElementById('k-fanhua-rate').textContent  = fanRate + '%';
+  document.getElementById('k-done-rate').textContent    = doneRate + '%';
+  document.getElementById('k-qualified').textContent    = qualRate;
+  document.getElementById('k-excellent').textContent    = exclRate;
 
   renderDistrictCards();
   renderDistrictTable();
