@@ -965,6 +965,7 @@ function renderDistrictTable() {
   // 学区统计优先使用 districts 数组（已由 JSON 的 by_district 填充完整）
   // 如果 districts 为空，才回退到从 teacherData 重新计算
   let districtStats = {};
+  let hasAiData = false;
   if (districts.length > 0) {
     districts.forEach(d => {
       districtStats[d.name] = {
@@ -975,11 +976,12 @@ function renderDistrictTable() {
         doc: d.doc || 0,
         art: d.art || 0,
         both: d.both || 0,
-        aiQualified: 0,
-        aiUnqualified: 0,
-        aiExcellent: 0,
-        aiTotal: 0
+        aiQualified: d.ai_qualified || 0,
+        aiUnqualified: d.ai_unqualified || 0,
+        aiExcellent: d.ai_excellent || 0,
+        aiTotal: d.ai_total || 0
       };
+      if (d.ai_total !== undefined) hasAiData = true;
     });
   }
 
@@ -999,21 +1001,18 @@ function renderDistrictTable() {
     });
   }
 
-  // 从 fanhuaScores 补充 AI 评分统计（按 district 聚合）
-  // 同时从 teacherData 的 aiScore 补充
-  const scoreSources = [];
-  fanhuaScores.forEach(f => scoreSources.push({ district: f.district, score: f.ai_score }));
-  teacherData.forEach(t => { if (t.aiScore !== undefined) scoreSources.push({ district: t.district, score: t.aiScore }); });
-
-  scoreSources.forEach(s => {
-    const dName = s.district;
-    if (dName && districtStats[dName]) {
-      districtStats[dName].aiTotal++;
-      if (s.score >= 4.5) districtStats[dName].aiExcellent++;
-      if (s.score >= 3.0) districtStats[dName].aiQualified++;
-      else if (s.score < 3.0) districtStats[dName].aiUnqualified++;
-    }
-  });
+  // 仅当 JSON 未提供 AI 统计时，才从 fanhuaScores 实时聚合（避免重复统计）
+  if (!hasAiData) {
+    fanhuaScores.forEach(f => {
+      const dName = f.district;
+      if (dName && districtStats[dName]) {
+        districtStats[dName].aiTotal++;
+        if (f.ai_score >= 4.5) districtStats[dName].aiExcellent++;
+        if (f.ai_score >= 3.0) districtStats[dName].aiQualified++;
+        else if (f.ai_score < 3.0) districtStats[dName].aiUnqualified++;
+      }
+    });
+  }
 
   // 转换为数组并排序
   const districtArray = Object.values(districtStats).sort((a, b) =>

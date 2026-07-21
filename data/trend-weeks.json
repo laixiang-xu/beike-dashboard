@@ -10,8 +10,8 @@
       "fanhua_rate": "0.9%",
       "doc": 0,
       "doc_rate": "0.0%",
-      "fanhua_qualified": 12,
-      "fanhua_qualified_rate": "100.0%",
+      "fanhua_qualified": 10,
+      "fanhua_qualified_rate": "83.3%",
       "fanhua_excellent": 0,
       "fanhua_excellent_rate": "0.0%",
       "by_district": [
@@ -24,7 +24,13 @@
           "fanhua_rate": "0.0%",
           "doc_submitted": 0,
           "doc_rate": "0.0%",
-          "excellent_rate": "待AI评分"
+          "excellent_rate": "-",
+          "ai_total": 0,
+          "ai_qualified": 0,
+          "ai_unqualified": 0,
+          "ai_excellent": 0,
+          "qualified_rate": "-",
+          "unqualified_rate": "-"
         },
         {
           "name": "C区",
@@ -35,7 +41,13 @@
           "fanhua_rate": "0.0%",
           "doc_submitted": 0,
           "doc_rate": "0.0%",
-          "excellent_rate": "待AI评分"
+          "excellent_rate": "-",
+          "ai_total": 0,
+          "ai_qualified": 0,
+          "ai_unqualified": 0,
+          "ai_excellent": 0,
+          "qualified_rate": "-",
+          "unqualified_rate": "-"
         },
         {
           "name": "DEMO特战队",
@@ -46,7 +58,13 @@
           "fanhua_rate": "0.0%",
           "doc_submitted": 0,
           "doc_rate": "0.0%",
-          "excellent_rate": "待AI评分"
+          "excellent_rate": "-",
+          "ai_total": 0,
+          "ai_qualified": 0,
+          "ai_unqualified": 0,
+          "ai_excellent": 0,
+          "qualified_rate": "-",
+          "unqualified_rate": "-"
         },
         {
           "name": "教学一区",
@@ -57,7 +75,13 @@
           "fanhua_rate": "2.6%",
           "doc_submitted": 0,
           "doc_rate": "0.0%",
-          "excellent_rate": "待AI评分"
+          "excellent_rate": "0.0%",
+          "ai_total": 10,
+          "ai_qualified": 9,
+          "ai_unqualified": 1,
+          "ai_excellent": 0,
+          "qualified_rate": "90.0%",
+          "unqualified_rate": "10.0%"
         },
         {
           "name": "教学三区",
@@ -68,7 +92,13 @@
           "fanhua_rate": "0.3%",
           "doc_submitted": 0,
           "doc_rate": "0.0%",
-          "excellent_rate": "待AI评分"
+          "excellent_rate": "0.0%",
+          "ai_total": 1,
+          "ai_qualified": 1,
+          "ai_unqualified": 0,
+          "ai_excellent": 0,
+          "qualified_rate": "100.0%",
+          "unqualified_rate": "0.0%"
         },
         {
           "name": "教学二区",
@@ -79,7 +109,13 @@
           "fanhua_rate": "0.2%",
           "doc_submitted": 0,
           "doc_rate": "0.0%",
-          "excellent_rate": "待AI评分"
+          "excellent_rate": "0.0%",
+          "ai_total": 1,
+          "ai_qualified": 0,
+          "ai_unqualified": 1,
+          "ai_excellent": 0,
+          "qualified_rate": "0.0%",
+          "unqualified_rate": "100.0%"
         }
       ],
       "courses": [
@@ -148,7 +184,7 @@
           "art": 0
         }
       ],
-      "generated_at": "2026-07-21 14:30:45",
+      "generated_at": "2026-07-21 14:48:11",
       "fanhua_rate_delta_prev": null,
       "fanhua_rate_delta_prev_label": "暂无对比数据",
       "fanhua_trend_arrow": "-"
