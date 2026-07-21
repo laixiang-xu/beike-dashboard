@@ -145,7 +145,10 @@
           "doc": 0,
           "art": 0
         }
-      ]
+      ],
+      "fanhua_rate_delta_prev": null,
+      "fanhua_rate_delta_prev_label": "暂无对比数据",
+      "fanhua_trend_arrow": "-"
     }
   ]
 }

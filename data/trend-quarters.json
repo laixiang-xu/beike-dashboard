@@ -17,7 +17,10 @@
       "fanhua_qualified": 12,
       "fanhua_qualified_rate": "100.0%",
       "fanhua_excellent": 0,
-      "fanhua_excellent_rate": "0.0%"
+      "fanhua_excellent_rate": "0.0%",
+      "fanhua_rate_delta_prev": null,
+      "fanhua_rate_delta_prev_label": "暂无对比数据",
+      "fanhua_trend_arrow": "-"
     }
   ]
 }

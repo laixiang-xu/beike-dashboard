@@ -148,7 +148,10 @@
           "art": 0
         }
       ],
-      "generated_at": "2026-07-21 14:13:13"
+      "generated_at": "2026-07-21 14:30:45",
+      "fanhua_rate_delta_prev": null,
+      "fanhua_rate_delta_prev_label": "暂无对比数据",
+      "fanhua_trend_arrow": "-"
     }
   ]
 }

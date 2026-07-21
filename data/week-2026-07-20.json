@@ -1,7 +1,7 @@
 {
   "week": "2026-07-20",
   "week_label": "2026年7月第三周",
-  "generated_at": "2026-07-20 17:47:03",
+  "generated_at": "2026-07-21 14:30:45",
   "summary": {
     "total_records": 1403,
     "exempt_count": 0,
@@ -15663,7 +15663,7 @@
       "images": [
         "images/拐拐_《愿望流星》_O8bPbbyB.jpg"
       ],
-      "is_duplicate": true
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,
@@ -15747,7 +15747,7 @@
       "images": [
         "images/淘7_《愿望流星》_YTNvbDZl.jpg"
       ],
-      "is_duplicate": true
+      "is_duplicate": false
     },
     {
       "ai_score": 3.5,

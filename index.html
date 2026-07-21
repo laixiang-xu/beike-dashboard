@@ -217,10 +217,10 @@ tr.edited { background: #fef3c7 !important; }
 <!-- ===== 标签导航 ===== -->
 <div class="tabs">
   <button class="tab active" onclick="switchTab('overview')">📊 总览看板</button>
+  <button class="tab" onclick="switchTab('report')">📋 结论报表</button>
   <button class="tab" onclick="switchTab('courses')">📚 课程详情 & 范画</button>
   <button class="tab" onclick="switchTab('teachers')">👩‍🏫 老师名单</button>
   <button class="tab" onclick="switchTab('trend')">📈 累计趋势</button>
-  <button class="tab" onclick="switchTab('upload')">📤 上传数据</button>
   <button class="tab" onclick="switchTab('aireview')">📝 范画总体点评</button>
 </div>
 
@@ -431,35 +431,77 @@ tr.edited { background: #fef3c7 !important; }
   </div>
 </div><!-- /tab-trend -->
 
-<!-- ==================== 标签5: 上传数据 ==================== -->
-<div class="tab-content" id="tab-upload">
+<!-- ==================== 标签5: 结论报表（汇报用） ==================== -->
+<div class="tab-content" id="tab-report">
+  <div class="toolbar">
+    <select id="reportPeriod" onchange="renderReport()">
+      <option value="weekly">📅 周报</option>
+      <option value="monthly">🗓️ 月报</option>
+      <option value="quarterly">📊 季度报</option>
+    </select>
+    <button class="btn" onclick="exportReportMarkdown()">📋 导出汇报稿</button>
+    <button class="btn" onclick="window.print()">🖨️ 打印 / 导出 PDF</button>
+    <span style="font-size:12px;color:var(--gray-500);">
+      💡 自动生成结论先行 + 关键指标 + 趋势对比 + 异常归因 + 数据明细的汇报稿，可直接转发学区经理/大区负责人。
+    </span>
+  </div>
+
+  <div class="panel" id="reportCore">
+    <div class="panel-header">🎯 核心结论（结论先行）</div>
+    <div class="panel-body" id="reportConclusion" style="font-size:14px;line-height:1.9;"></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="panel">
+      <div class="panel-header">📈 关键指标</div>
+      <div class="panel-body" id="reportKPIs"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">🔄 环比 / 同比</div>
+      <div class="panel-body" id="reportComparison"></div>
+    </div>
+  </div>
+
   <div class="panel">
-    <div class="panel-header">📤 上传新周备课数据</div>
+    <div class="panel-header">⚠️ 异常归因（自动识别）</div>
+    <div class="panel-body" id="reportIssues" style="font-size:13px;line-height:1.8;"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">📊 学区明细（已按提交率排序）</div>
     <div class="panel-body">
-      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
-        <div class="icon">📁</div>
-        <div class="text">拖拽Excel文件到此处，或 <strong>点击选择文件</strong></div>
-        <div style="font-size:12px;color:var(--gray-500);margin-top:6px;">支持 .xlsx / .xls 格式</div>
-      </div>
-      <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFileUpload(this.files)">
-      <div class="upload-history" id="uploadHistory">
-        <strong>已上传周期：</strong>
-        <span id="historyList">2026年6月第三周（6.15-6.21）— 当前</span>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>学区</th><th>总排课</th><th>应提交</th><th>范画提交</th><th>范画率</th><th>文档提交</th><th>文档率</th><th>状态</th></tr>
+          </thead>
+          <tbody id="reportDistrictTable"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <div class="panel">
-    <div class="panel-header">📋 上传说明</div>
-    <div class="panel-body" style="font-size:13px;line-height:2;">
-      <p><strong>1.</strong> 从飞书多维表格或BI系统导出备课明细Excel</p>
-      <p><strong>2.</strong> 确保Excel包含以下列：排课ID、老师ID、工号、真名、艺名、学区、小组、课程类型、课表名、课程名、上课日期、星期、上课时段、备课文档(O列)、提交范画(P列)</p>
-      <p><strong>3.</strong> 拖拽文件到上方区域或点击上传</p>
-      <p><strong>4.</strong> 系统自动解析并累计到趋势数据中</p>
-      <p style="color:var(--gray-500);margin-top:8px;">⚠️ 上传的数据仅存储在浏览器本地，不会上传到任何服务器。清除浏览器缓存会丢失累计数据，建议定期导出Excel备份。</p>
+    <div class="panel-header">📚 课程明细（已按提交率排序）</div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>课程名</th><th>总排课</th><th>应提交</th><th>范画提交</th><th>范画率</th><th>文档提交</th><th>文档率</th><th>状态</th></tr>
+          </thead>
+          <tbody id="reportCourseTable"></tbody>
+        </table>
+      </div>
     </div>
   </div>
-</div><!-- /tab-upload -->
+
+  <div class="panel">
+    <div class="panel-header">📝 完整汇报稿（可复制）</div>
+    <div class="panel-body">
+      <textarea id="reportMarkdown" readonly style="width:100%;min-height:300px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;padding:12px;border:1px solid var(--gray-300);border-radius:6px;background:#fafbfc;"></textarea>
+    </div>
+  </div>
+</div><!-- /tab-report -->
 
 <!-- ==================== 标签6: 范画总体点评 ==================== -->
 <div class="tab-content" id="tab-aireview">
@@ -832,7 +874,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveToStorage(); // 同步到localStorage
   }
   renderTrendChart();
-  setupDragDrop();
   populateFilters();
 });
 
@@ -906,6 +947,7 @@ function switchTab(name) {
   document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
   document.getElementById(`tab-${name}`).classList.add('active');
   if (name === 'trend') renderTrendChart();
+  if (name === 'report') renderReport();
   if (name === 'aireview') {
     // 切换到"范画总体点评"标签时，默认筛选优秀范画（≥4.5分）
     const verdictSelect = document.getElementById('aiFilterVerdict');
@@ -1405,6 +1447,339 @@ function renderTrendChart() {
       <td>${d.by_district ? d.by_district.length + '学区' : '-'}</td>
     </tr>`;
   }).join('');
+}
+
+// ====== 结论报表（汇报用） ======
+function parseRateNum(s) {
+  if (!s) return 0;
+  const m = String(s).match(/(-?\d+(\.\d+)?)/);
+  return m ? parseFloat(m[1]) : 0;
+}
+
+function getReportData() {
+  const period = document.getElementById('reportPeriod')?.value || 'weekly';
+  let entries = [], periodLabel = '本周', periodName = '周', unitShort = '周';
+  if (period === 'weekly' && trendWeeksData.weeks && trendWeeksData.weeks.length) {
+    entries = trendWeeksData.weeks;
+    periodLabel = '本周'; periodName = '周'; unitShort = '周';
+  } else if (period === 'monthly' && trendMonthsData.months && trendMonthsData.months.length) {
+    entries = trendMonthsData.months;
+    periodLabel = '本月'; periodName = '月'; unitShort = '月';
+  } else if (period === 'quarterly' && trendQuartersData.quarters && trendQuartersData.quarters.length) {
+    entries = trendQuartersData.quarters;
+    periodLabel = '本季度'; periodName = '季度'; unitShort = '季度';
+  } else {
+    entries = [];
+  }
+  return { period, periodLabel, periodName, unitShort, entries };
+}
+
+function renderReport() {
+  const { period, periodLabel, periodName, unitShort, entries } = getReportData();
+
+  if (!entries || entries.length === 0) {
+    document.getElementById('reportConclusion').innerHTML =
+      '<div style="text-align:center;color:var(--gray-500);padding:40px;">📊 暂无历史数据<br><small>请先在飞书表格录入数据，然后双击 run.bat 生成周报数据</small></div>';
+    return;
+  }
+
+  // 最新的报告期（按 period 倒序排列，第一条就是最新一期）
+  const sorted = entries.slice().sort((a, b) => b.period.localeCompare(a.period));
+  const current = sorted[0];
+  const prev = sorted[1] || null;
+
+  // ====== 1. 核心结论 ======
+  const fanhuaRate = parseRateNum(current.fanhua_rate);
+  const docRate = parseRateNum(current.doc_rate);
+  const excellentRate = parseRateNum(current.fanhua_excellent_rate);
+  const qualifiedRate = parseRateNum(current.fanhua_qualified_rate);
+  const currentTotal = current.need || 0;
+  const fanhuaMissing = (current.need || 0) - (current.fanhua || 0);
+  const docMissing = (current.need || 0) - (current.doc || 0);
+
+  // 学区/课程按范画提交率排序，找出 top3 / bottom3
+  const districts = (current.by_district || []).filter(d => d.need > 0)
+    .map(d => ({...d, _rate: parseRateNum(d.fanhua_rate)}))
+    .sort((a, b) => b._rate - a._rate);
+  const courses = (current.courses || []).filter(c => c.submit > 0)
+    .map(c => ({...c, _rate: c.submit > 0 ? (c.art / c.submit * 100) : 0}))
+    .sort((a, b) => b._rate - a._rate);
+
+  const topDistricts = districts.slice(0, 3);
+  const bottomDistricts = districts.filter(d => d.need >= 5).slice(-3).reverse();
+  const topCourses = courses.slice(0, 3);
+  const bottomCourses = courses.filter(c => c.submit >= 5).slice(-3).reverse();
+
+  // 结论行
+  const conclEl = document.getElementById('reportConclusion');
+  let conclHtml = '';
+  conclHtml += `<div style="margin-bottom:14px;">
+    <strong style="font-size:16px;">${current.label || current.period} ${periodName}报</strong>
+    <span style="color:var(--gray-500);font-size:12px;margin-left:8px;">共 ${current.need || 0} 人次应提交（已累计 ${current.week_count || entries.length} ${unitShort}）</span>
+  </div>`;
+
+  // 核心数据一行
+  conclHtml += `<div style="margin-bottom:10px;line-height:1.9;">
+    <strong>1. 范画提交：</strong>
+    应交 <strong>${current.need || 0}</strong> 人次，已交 <strong style="color:var(--success);">${current.fanhua || 0}</strong>，
+    提交率 <strong style="color:${fanhuaRate >= 80 ? 'var(--success)' : fanhuaRate >= 50 ? 'var(--warning)' : 'var(--danger)'};font-size:18px;">${current.fanhua_rate}</strong>
+    ${fanhuaRate >= 80 ? '（达标 ✓）' : fanhuaRate >= 50 ? '（基本达标，需进一步提升）' : '（<span style="color:var(--danger);">未达标 ⚠️</span>，需重点跟进）'}
+    <br>`;
+  conclHtml += `<strong>2. 文档提交：</strong>
+    应交 <strong>${current.need || 0}</strong> 人次，已交 <strong style="color:var(--primary);">${current.doc || 0}</strong>，
+    提交率 <strong style="color:${docRate >= 80 ? 'var(--success)' : 'var(--danger)'};font-size:18px;">${current.doc_rate}</strong>
+    ${docRate >= 80 ? '（达标 ✓）' : '<span style="color:var(--danger);">（未达标 ⚠️）</span>'}
+    <br>`;
+  if (current.fanhua > 0) {
+    conclHtml += `<strong>3. AI 评分：</strong>
+    合格率 <strong>${qualifiedRate.toFixed(1)}%</strong>（≥3.0分），
+    优秀率 <strong style="color:${excellentRate >= 30 ? 'var(--success)' : 'var(--warning)'};">${excellentRate.toFixed(1)}%</strong>（≥4.0分）<br>`;
+  }
+  // 环比
+  if (prev) {
+    const curR = parseRateNum(current.fanhua_rate);
+    const prevR = parseRateNum(prev.fanhua_rate);
+    const delta = curR - prevR;
+    const arrow = delta > 0.05 ? '↑' : delta < -0.05 ? '↓' : '→';
+    const color = delta > 0.05 ? 'var(--success)' : delta < -0.05 ? 'var(--danger)' : 'var(--gray-500)';
+    conclHtml += `<strong>4. 环比 ${prev.label || prev.period}：</strong>
+    范画提交率 <span style="color:${color};font-weight:bold;">${arrow} ${delta > 0 ? '+' : ''}${delta.toFixed(2)}%</span>
+    （${prev.fanhua_rate} → ${current.fanhua_rate}）<br>`;
+  }
+  conclEl.innerHTML = conclHtml;
+
+  // ====== 2. 关键指标卡片 ======
+  const kpiEl = document.getElementById('reportKPIs');
+  kpiEl.innerHTML = `
+    <table style="width:100%;font-size:13px;">
+      <tr><td>总排课</td><td style="text-align:right;font-weight:bold;font-size:16px;">${current.total || 0}</td></tr>
+      <tr><td>应提交（去免检）</td><td style="text-align:right;">${current.need || 0}</td></tr>
+      <tr><td>免检人数</td><td style="text-align:right;color:var(--gray-500);">${current.exempt || 0}</td></tr>
+      <tr style="border-top:2px solid var(--gray-200);">
+        <td>范画已提交</td><td style="text-align:right;color:var(--success);font-weight:bold;">${current.fanhua || 0}</td>
+      </tr>
+      <tr><td>范画提交率</td><td style="text-align:right;font-weight:bold;font-size:18px;color:var(--success);">${current.fanhua_rate}</td></tr>
+      <tr><td>文档已提交</td><td style="text-align:right;color:var(--primary);font-weight:bold;">${current.doc || 0}</td></tr>
+      <tr><td>文档提交率</td><td style="text-align:right;font-weight:bold;font-size:18px;color:var(--primary);">${current.doc_rate}</td></tr>
+      ${current.fanhua_qualified !== undefined ? `
+      <tr style="border-top:2px solid var(--gray-200);">
+        <td>AI 合格数（≥3.0）</td><td style="text-align:right;">${current.fanhua_qualified || 0}</td>
+      </tr>
+      <tr><td>AI 优秀数（≥4.0）</td><td style="text-align:right;color:var(--success);">${current.fanhua_excellent || 0}</td>
+      </tr>` : ''}
+      <tr style="border-top:2px solid var(--gray-200);">
+        <td style="color:var(--danger);">未交范画</td>
+        <td style="text-align:right;color:var(--danger);font-weight:bold;">${fanhuaMissing} 人次</td>
+      </tr>
+      ${docMissing > 0 ? `
+      <tr><td style="color:var(--danger);">未交文档</td>
+        <td style="text-align:right;color:var(--danger);font-weight:bold;">${docMissing} 人次</td>
+      </tr>` : ''}
+    </table>
+  `;
+
+  // ====== 3. 环比/同比 ======
+  const cmpEl = document.getElementById('reportComparison');
+  let cmpHtml = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+  cmpHtml += '<tr style="background:var(--gray-100);"><th style="text-align:left;padding:6px;">对比期</th><th style="padding:6px;">范画率</th><th style="padding:6px;">变化</th></tr>';
+  if (prev) {
+    const curR = parseRateNum(current.fanhua_rate);
+    const prevR = parseRateNum(prev.fanhua_rate);
+    const delta = curR - prevR;
+    const arrow = delta > 0.05 ? '↑' : delta < -0.05 ? '↓' : '→';
+    const color = delta > 0.05 ? 'var(--success)' : delta < -0.05 ? 'var(--danger)' : 'var(--gray-500)';
+    cmpHtml += `<tr><td style="padding:6px;">${prev.label || prev.period}（环比）</td>
+      <td style="text-align:center;padding:6px;">${prev.fanhua_rate}</td>
+      <td style="text-align:center;padding:6px;color:${color};font-weight:bold;">${arrow} ${delta > 0 ? '+' : ''}${delta.toFixed(2)}%</td></tr>`;
+  } else {
+    cmpHtml += '<tr><td colspan="3" style="text-align:center;padding:12px;color:var(--gray-500);">暂无对比数据（需要历史累计 2 期以上）</td></tr>';
+  }
+  // 显示最近 5 期的趋势
+  cmpHtml += '<tr><td colspan="3" style="padding:8px 6px 4px;color:var(--gray-500);font-size:12px;border-top:1px solid var(--gray-200);">近 5 期趋势：</td></tr>';
+  sorted.slice(0, 5).forEach(e => {
+    cmpHtml += `<tr><td style="padding:4px 6px;font-size:12px;">${e.label || e.period}</td>
+      <td style="text-align:center;padding:4px 6px;font-size:12px;">${e.fanhua_rate}</td>
+      <td style="text-align:center;padding:4px 6px;font-size:12px;">${e.fanhua_trend_arrow || '-'}</td></tr>`;
+  });
+  cmpHtml += '</table>';
+  cmpEl.innerHTML = cmpHtml;
+
+  // ====== 4. 异常归因 ======
+  const issuesEl = document.getElementById('reportIssues');
+  let issuesHtml = '';
+  if (bottomDistricts.length > 0) {
+    issuesHtml += '<div style="margin-bottom:12px;"><strong style="color:var(--danger);">📉 提交率较低的学区（需重点跟进）：</strong><ul style="margin-top:6px;">';
+    bottomDistricts.forEach(d => {
+      if (d._rate < 50) {
+        issuesHtml += `<li><strong>${d.name}</strong>：${d.fanhua_rate}（${d.fanhua_submitted}/${d.need}），建议学区经理复盘并通知组长。</li>`;
+      }
+    });
+    issuesHtml += '</ul></div>';
+  }
+  if (bottomCourses.length > 0) {
+    issuesHtml += '<div style="margin-bottom:12px;"><strong style="color:var(--danger);">📉 提交率较低的课程：</strong><ul style="margin-top:6px;">';
+    bottomCourses.forEach(c => {
+      if (c._rate < 30) {
+        issuesHtml += `<li><strong>《${c.name}》</strong>：${c._rate.toFixed(1)}%（${c.art}/${c.submit}），建议教研组针对该课程单独排期补交。</li>`;
+      }
+    });
+    issuesHtml += '</ul></div>';
+  }
+  if (fanhuaMissing > 0 || docMissing > 0) {
+    issuesHtml += `<div style="margin-bottom:12px;"><strong style="color:var(--warning);">⚠️ 缺口明细：</strong>
+      <span>本周有 <strong>${fanhuaMissing}</strong> 人次未交范画，<strong>${docMissing}</strong> 人次未交文档。建议从"老师名单"Tab 导出未交名单定向通知。</span>
+    </div>`;
+  }
+  if (!issuesHtml) {
+    issuesHtml = '<div style="color:var(--success);">✅ 暂无明显异常，所有学区/课程均达到基本要求。</div>';
+  }
+  // 达标学区表扬
+  if (topDistricts.length > 0) {
+    issuesHtml += '<div style="margin-top:12px;"><strong style="color:var(--success);">🌟 表扬：</strong><span>';
+    const excellent = topDistricts.filter(d => d._rate >= 80);
+    if (excellent.length > 0) {
+      issuesHtml += excellent.map(d => `${d.name}（${d.fanhua_rate}）`).join('、') + ' 范画提交表现优秀，可作为标杆分享。';
+    } else {
+      issuesHtml += '本周整体提交率有待提升，请各学区经理关注。';
+    }
+    issuesHtml += '</span></div>';
+  }
+  issuesEl.innerHTML = issuesHtml;
+
+  // ====== 5. 学区明细表 ======
+  const dTbody = document.getElementById('reportDistrictTable');
+  if (districts.length === 0) {
+    dTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-500);padding:20px;">暂无学区数据</td></tr>';
+  } else {
+    dTbody.innerHTML = districts.map(d => {
+      const rate = d._rate;
+      const status = rate >= 80 ? '<span style="color:var(--success);">🟢 达标</span>'
+                  : rate >= 50 ? '<span style="color:var(--warning);">🟡 跟进</span>'
+                  : '<span style="color:var(--danger);">🔴 告警</span>';
+      const rateColor = rate >= 80 ? 'var(--success)' : rate >= 50 ? 'var(--warning)' : 'var(--danger)';
+      return `<tr>
+        <td><strong>${d.name}</strong></td>
+        <td>${d.total || 0}</td>
+        <td>${d.need || 0}</td>
+        <td>${d.fanhua_submitted || 0}</td>
+        <td style="color:${rateColor};font-weight:bold;">${d.fanhua_rate}</td>
+        <td>${d.doc_submitted || 0}</td>
+        <td>${d.doc_rate || '0%'}</td>
+        <td>${status}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ====== 6. 课程明细表 ======
+  const cTbody = document.getElementById('reportCourseTable');
+  if (courses.length === 0) {
+    cTbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray-500);padding:20px;">暂无课程数据</td></tr>';
+  } else {
+    cTbody.innerHTML = courses.map(c => {
+      const rate = c._rate;
+      const status = rate >= 80 ? '<span style="color:var(--success);">🟢 达标</span>'
+                  : rate >= 30 ? '<span style="color:var(--warning);">🟡 跟进</span>'
+                  : '<span style="color:var(--danger);">🔴 告警</span>';
+      const rateColor = rate >= 80 ? 'var(--success)' : rate >= 30 ? 'var(--warning)' : 'var(--danger)';
+      return `<tr>
+        <td><strong>《${c.name}》</strong></td>
+        <td>${c.total || 0}</td>
+        <td>${c.submit || 0}</td>
+        <td>${c.art || 0}</td>
+        <td style="color:${rateColor};font-weight:bold;">${rate.toFixed(1)}%</td>
+        <td>${c.doc || 0}</td>
+        <td>${c.submit > 0 ? (c.doc / c.submit * 100).toFixed(1) + '%' : '0%'}</td>
+        <td>${status}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ====== 7. 完整汇报稿（Markdown 格式） ======
+  let md = `# ${current.label || current.period} ${periodName}报\n\n`;
+  md += `> 自动生成于 ${current.generated_at || new Date().toLocaleString('zh-CN')}　|　共累计 ${entries.length} ${unitShort}\n\n`;
+  md += `## 🎯 核心结论\n\n`;
+  md += `1. **范画提交**：应交 ${current.need} 人次，已交 ${current.fanhua}，**提交率 ${current.fanhua_rate}**${fanhuaRate >= 80 ? '（达标 ✓）' : '（未达标，需跟进）'}\n`;
+  md += `2. **文档提交**：应交 ${current.need} 人次，已交 ${current.doc}，**提交率 ${current.doc_rate}**${docRate >= 80 ? '（达标 ✓）' : '（未达标）'}\n`;
+  if (current.fanhua > 0) {
+    md += `3. **AI 评分**：合格率 ${qualifiedRate.toFixed(1)}%（≥3.0分），优秀率 ${excellentRate.toFixed(1)}%（≥4.0分）\n`;
+  }
+  if (prev) {
+    const curR = parseRateNum(current.fanhua_rate);
+    const prevR = parseRateNum(prev.fanhua_rate);
+    const delta = curR - prevR;
+    const arrow = delta > 0.05 ? '↑' : delta < -0.05 ? '↓' : '→';
+    md += `4. **环比 ${prev.label || prev.period}**：${arrow} ${delta > 0 ? '+' : ''}${delta.toFixed(2)}%（${prev.fanhua_rate} → ${current.fanhua_rate}）\n`;
+  }
+  md += `\n## 📊 关键指标\n\n`;
+  md += `| 指标 | 数值 |\n|---|---|\n`;
+  md += `| 总排课 | ${current.total} |\n| 免检人数 | ${current.exempt} |\n| 应提交 | ${current.need} |\n`;
+  md += `| 范画已提交 | ${current.fanhua} |\n| 范画提交率 | **${current.fanhua_rate}** |\n`;
+  md += `| 文档已提交 | ${current.doc} |\n| 文档提交率 | **${current.doc_rate}** |\n`;
+  if (current.fanhua_qualified !== undefined) {
+    md += `| AI 合格数（≥3.0） | ${current.fanhua_qualified} |\n| AI 优秀数（≥4.0） | ${current.fanhua_excellent} |\n`;
+  }
+  md += `| 未交范画 | ${fanhuaMissing} 人次 |\n`;
+  if (docMissing > 0) md += `| 未交文档 | ${docMissing} 人次 |\n`;
+
+  md += `\n## ⚠️ 异常归因\n\n`;
+  if (bottomDistricts.filter(d => d._rate < 50).length > 0) {
+    md += `**提交率较低的学区**：\n`;
+    bottomDistricts.filter(d => d._rate < 50).forEach(d => {
+      md += `- ${d.name}：${d.fanhua_rate}（${d.fanhua_submitted}/${d.need}）\n`;
+    });
+  }
+  if (bottomCourses.filter(c => c._rate < 30).length > 0) {
+    md += `\n**提交率较低的课程**：\n`;
+    bottomCourses.filter(c => c._rate < 30).forEach(c => {
+      md += `- 《${c.name}》：${c._rate.toFixed(1)}%（${c.art}/${c.submit}）\n`;
+    });
+  }
+  if (fanhuaMissing > 0 || docMissing > 0) {
+    md += `\n**缺口明细**：本周有 ${fanhuaMissing} 人次未交范画，${docMissing} 人次未交文档。\n`;
+  }
+  if (!issuesHtml.includes('告警') && !issuesHtml.includes('未达标')) {
+    md += `\n✅ 暂无明显异常。\n`;
+  }
+
+  md += `\n## 📊 学区明细\n\n`;
+  md += `| 学区 | 总排课 | 应提交 | 范画提交 | 范画率 | 文档提交 | 文档率 | 状态 |\n|---|---|---|---|---|---|---|---|\n`;
+  districts.forEach(d => {
+    const rate = d._rate;
+    const status = rate >= 80 ? '🟢 达标' : rate >= 50 ? '🟡 跟进' : '🔴 告警';
+    md += `| ${d.name} | ${d.total} | ${d.need} | ${d.fanhua_submitted} | ${d.fanhua_rate} | ${d.doc_submitted} | ${d.doc_rate} | ${status} |\n`;
+  });
+
+  md += `\n## 📚 课程明细\n\n`;
+  md += `| 课程 | 总排课 | 应提交 | 范画提交 | 范画率 | 文档提交 | 文档率 | 状态 |\n|---|---|---|---|---|---|---|---|\n`;
+  courses.forEach(c => {
+    const rate = c._rate;
+    const status = rate >= 80 ? '🟢 达标' : rate >= 30 ? '🟡 跟进' : '🔴 告警';
+    const docR = c.submit > 0 ? (c.doc / c.submit * 100).toFixed(1) + '%' : '0%';
+    md += `| 《${c.name}》 | ${c.total} | ${c.submit} | ${c.art} | ${rate.toFixed(1)}% | ${c.doc} | ${docR} | ${status} |\n`;
+  });
+
+  md += `\n---\n*本报告由备课检查系统自动生成*\n`;
+
+  document.getElementById('reportMarkdown').value = md;
+}
+
+function exportReportMarkdown() {
+  const md = document.getElementById('reportMarkdown').value;
+  if (!md) {
+    alert('请先切换到「结论报表」Tab 加载数据');
+    return;
+  }
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const period = document.getElementById('reportPeriod')?.value || 'weekly';
+  const periodLabel = period === 'weekly' ? '周报' : period === 'monthly' ? '月报' : '季报';
+  a.href = url;
+  a.download = `备课检查${periodLabel}_${new Date().toISOString().slice(0,10)}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // ====== 文件上传 ======
