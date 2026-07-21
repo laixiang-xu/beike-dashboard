@@ -171,6 +171,7 @@ tr.selected td{background:#FFF8E1;}
   <button class="nav-tab" onclick="switchTab('teachers')">👩‍🏫 老师名单</button>
   <button class="nav-tab" onclick="switchTab('trend')">📈 累计趋势</button>
   <button class="nav-tab" onclick="switchTab('showcase')">✨ 优秀范画</button>
+  <button class="nav-tab" onclick="switchTab('report')">📋 汇报结论</button>
 </nav>
 
 <!-- ══ TAB1: 总览看板 ══ -->
@@ -239,6 +240,17 @@ tr.selected td{background:#FFF8E1;}
     </div>
   </div>
 
+  <!-- 学区下钻面板（点击学区行后展开） -->
+  <div id="districtDrillPanel" style="display:none;margin-bottom:16px;">
+    <div class="panel" style="border:2px solid var(--accent);">
+      <div class="panel-hd" style="background:var(--dark);color:#fff;">
+        <h2 id="drillTitle" style="color:#fff;">学区详情</h2>
+        <button onclick="closeDistrictDrill()" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;line-height:1;">×</button>
+      </div>
+      <div style="padding:12px 16px;" id="drillGroupList"></div>
+    </div>
+  </div>
+
   <!-- 图表行 -->
   <div class="chart-row">
     <div class="panel">
@@ -248,6 +260,46 @@ tr.selected td{background:#FFF8E1;}
     <div class="panel">
       <div class="panel-hd"><h2>📊 提交状态分布</h2></div>
       <div class="panel-bd"><div class="chart-box"><canvas id="chartStatus"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- 数据备存表（汇总所有老师记录） -->
+  <div class="panel">
+    <div class="panel-hd">
+      <h2>📋 数据备存表（全量记录）</h2>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="tb-input" id="backupSearch" type="text" placeholder="搜索..." oninput="filterBackupTable()" style="width:140px;padding:5px 9px;">
+        <select class="tb-input" id="backupDistrictF" onchange="filterBackupTable()" style="padding:5px 9px;">
+          <option value="">全部学区</option>
+        </select>
+        <select class="tb-input" id="backupStatusF" onchange="filterBackupTable()" style="padding:5px 9px;">
+          <option value="">全部状态</option>
+          <option value="已完成">已完成</option>
+          <option value="部分提交">部分提交</option>
+          <option value="未提交">未提交</option>
+        </select>
+        <span style="font-size:11px;color:var(--text3);" id="backupCount"></span>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="max-height:400px;overflow-y:auto;">
+      <table id="backupTable">
+        <thead style="position:sticky;top:0;z-index:1;">
+          <tr>
+            <th onclick="sortTbl('backupTable',0)">#</th>
+            <th onclick="sortTbl('backupTable',1)">艺名 ↕</th>
+            <th onclick="sortTbl('backupTable',2)">学区 ↕</th>
+            <th onclick="sortTbl('backupTable',3)">小组 ↕</th>
+            <th onclick="sortTbl('backupTable',4)">课程 ↕</th>
+            <th onclick="sortTbl('backupTable',5)">上课日期 ↕</th>
+            <th>备课文档</th>
+            <th>范画</th>
+            <th onclick="sortTbl('backupTable',8)">AI评分 ↕</th>
+            <th onclick="sortTbl('backupTable',9)">状态 ↕</th>
+            <th>提交时间</th>
+          </tr>
+        </thead>
+        <tbody id="backupBody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -299,26 +351,10 @@ tr.selected td{background:#FFF8E1;}
         <div class="sub" id="cpSub">选择课程后显示老师和范画</div>
       </div>
       <div class="tab2-right-body">
-        <!-- 老师筛选 -->
-        <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;" id="cpFilters" style="display:none;">
-          <select class="tb-input" id="cpStatusFilter" onchange="renderCoursePanel()" style="font-size:11px;padding:4px 8px;">
-            <option value="all">全部</option>
-            <option value="has_fanhua">有范画</option>
-            <option value="no_fanhua">无范画</option>
-            <option value="已完成">已完成</option>
-            <option value="未提交">未提交</option>
-            <option value="部分提交">部分提交</option>
-          </select>
-          <input class="tb-input" id="cpNameSearch" type="text" placeholder="搜索艺名..." oninput="renderCoursePanel()" style="font-size:11px;padding:4px 8px;width:100px;">
-        </div>
-        <!-- 统计行 -->
-        <div id="cpStats" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;font-size:11px;"></div>
-        <!-- 老师紧凑列表 -->
-        <div id="cpTeacherList" style="margin-bottom:14px;"></div>
-        <!-- 范画缩略图 -->
+        <!-- 范画缩略图（只显示范画，按评分从高到低） -->
         <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;" id="cpFanhuaLabel"></div>
         <div class="fanhua-grid" id="cpFanhuaGrid"></div>
-        <div class="empty" id="cpEmpty" style="display:none;">
+        <div class="empty" id="cpEmpty">
           <div class="ei">🖼</div>
           <p>请先点击左侧课程行</p>
         </div>
@@ -436,6 +472,92 @@ tr.selected td{background:#FFF8E1;}
   </div>
 </div><!-- /page-showcase -->
 
+<!-- ══ TAB6: 汇报结论 ══ -->
+<div class="page" id="page-report">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:var(--dark);" id="reportTitle">备课提交情况汇报</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px;" id="reportSubtitle">数据截止周日 23:59</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="tbtn tbtn-outline" style="color:var(--dark);background:var(--surface);border:1px solid var(--border);" onclick="window.print()">🖨️ 打印/导出PDF</button>
+      <button class="tbtn tbtn-accent" onclick="exportData()">📥 下载Excel</button>
+    </div>
+  </div>
+
+  <!-- 整体结论 -->
+  <div class="panel" style="border-left:4px solid var(--accent);">
+    <div class="panel-hd"><h2>📌 本期整体结论</h2></div>
+    <div class="panel-bd" id="reportConclusion" style="line-height:2;font-size:13px;"></div>
+  </div>
+
+  <!-- 对比数据表（参考年报格式） -->
+  <div class="panel">
+    <div class="panel-hd">
+      <h2>📊 学区完成率对比表</h2>
+      <span class="hint">色标：绿=优秀(≥90%) 黄=良好(≥70%) 红=待提升(&lt;70%)</span>
+    </div>
+    <div class="panel-bd">
+      <div class="tbl-wrap">
+        <table id="reportTable" style="font-size:13px;">
+          <thead>
+            <tr>
+              <th style="background:var(--dark);color:#fff;">学区</th>
+              <th style="background:var(--dark);color:#fff;">总排课</th>
+              <th style="background:var(--dark);color:#fff;">范画提交</th>
+              <th style="background:var(--dark);color:#fff;">范画率</th>
+              <th style="background:var(--dark);color:#fff;">文档提交</th>
+              <th style="background:var(--dark);color:#fff;">文档率</th>
+              <th style="background:var(--dark);color:#fff;">双项完成</th>
+              <th style="background:var(--dark);color:#fff;">双项率</th>
+              <th style="background:var(--dark);color:#fff;">合格率</th>
+              <th style="background:var(--dark);color:#fff;">优秀率</th>
+              <th style="background:var(--dark);color:#fff;">结论</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody"></tbody>
+          <tfoot id="reportTableFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 各学区分析 -->
+  <div class="panel">
+    <div class="panel-hd"><h2>📝 各学区情况分析</h2></div>
+    <div class="panel-bd" id="reportDistrictAnalysis" style="line-height:2;font-size:13px;"></div>
+  </div>
+
+  <!-- 行动建议 -->
+  <div class="panel" style="border-left:4px solid var(--success);">
+    <div class="panel-hd"><h2>✅ 行动建议</h2></div>
+    <div class="panel-bd" id="reportActions" style="line-height:2.2;font-size:13px;"></div>
+  </div>
+
+  <!-- 附：课程明细 -->
+  <div class="panel">
+    <div class="panel-hd"><h2>附：课程提交明细</h2></div>
+    <div class="tbl-wrap">
+      <table style="font-size:12px;">
+        <thead>
+          <tr>
+            <th>课程名称</th>
+            <th>总排课</th>
+            <th>范画提交</th>
+            <th>范画率</th>
+            <th>文档提交</th>
+            <th>文档率</th>
+            <th>双项完成</th>
+          </tr>
+        </thead>
+        <tbody id="reportCourseBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page-report -->
+
 <!-- modal -->
 <div class="modal-bg" id="modalBg" onclick="closeModal()">
   <img class="modal-img" id="modalImg" src="" alt="">
@@ -504,14 +626,15 @@ function init() {
 
 function switchTab(name) {
   document.querySelectorAll('.nav-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['overview','courses','teachers','trend','showcase'][i] === name);
+    t.classList.toggle('active', ['overview','courses','teachers','trend','showcase','report'][i] === name);
   });
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   if (name === 'courses')   { renderCourseTable(); initCoursePanel(); }
   if (name === 'teachers')  renderTeacherTable();
   if (name === 'trend')     renderTrend();
-  if (name === 'showcase')  renderShowcase();
+  if (name === 'showcase') renderShowcase();
+  if (name === 'report')    renderReport();
 }
 
 // ════ TAB1: OVERVIEW ════
@@ -570,7 +693,7 @@ function renderDistrictTable() {
 
     const bar = `<div class="prog" style="width:60px;"><div class="prog-fill" style="width:${fanRate}%"></div></div>`;
     return `<tr>
-      <td class="td-link" onclick="switchTab('teachers');setTimeout(()=>{document.getElementById('teacherDistrictF').value='${d}';renderTeacherTable();},100)">${d}</td>
+      <td class="td-link" onclick="toggleDistrictDrill('${d}')" style="cursor:pointer;color:var(--accent2);font-weight:700;">${d}</td>
       <td>${total}</td>
       <td>${exempt}</td>
       <td>${need}</td>
@@ -635,7 +758,7 @@ function populateFilters() {
   const districts = [...new Set(allTeachers.map(t=>t.district).filter(d=>!skip.includes(d)))].sort();
   const courses   = [...new Set(allTeachers.map(t=>t.course).filter(c=>c&&c!=='未知课程'))].sort();
 
-  ['courseDistrictFilter'].forEach(id => {
+  ['courseDistrictFilter','backupDistrictF'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.options.length === 1) {
       districts.forEach(d => { const o=document.createElement('option'); o.value=o.text=d; el.appendChild(o); });
@@ -653,6 +776,7 @@ function populateFilters() {
       courses.forEach(c => { const o=document.createElement('option'); o.value=o.text=c; el.appendChild(o); });
     }
   });
+  renderBackupTable();
 }
 
 function renderCourseTable() {
@@ -968,7 +1092,93 @@ function sortTbl(tableId, col) {
   rows.forEach(r => tbody.appendChild(r));
 }
 
-// ════ EDIT MODE ════
+// ════ DISTRICT DRILL (inline expand in Tab1) ════
+let activeDrillDistrict = null;
+
+function toggleDistrictDrill(district) {
+  const panel = document.getElementById('districtDrillPanel');
+  if (activeDrillDistrict === district) {
+    activeDrillDistrict = null;
+    panel.style.display = 'none';
+    renderDistrictTable();
+    return;
+  }
+  activeDrillDistrict = district;
+  renderDistrictTable();
+  document.getElementById('drillTitle').textContent = district + ' — 小组详情';
+  panel.style.display = 'block';
+
+  const groups = Object.entries(DATA.by_group||{})
+    .filter(([g,v]) => v.district === district)
+    .sort((a,b) => b[1].total - a[1].total);
+
+  if (!groups.length) {
+    document.getElementById('drillGroupList').innerHTML = '<div style="padding:16px;color:var(--text3);">暂无小组数据</div>';
+    return;
+  }
+
+  document.getElementById('drillGroupList').innerHTML = groups.map(([g, gv]) => {
+    const done = (gv['已完成']||0)+(gv['迟交完成']||0)+(gv['免检']||0);
+    const rate = gv.total ? (done/gv.total*100).toFixed(1) : '0.0';
+    const fan  = (gv.teachers||[]).filter(t=>t.has_fanhua).length;
+    const doc  = (gv.teachers||[]).filter(t=>t.has_doc).length;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;font-weight:700;min-width:100px;">${g}</span>
+      <span style="font-size:11px;color:var(--text3);">共 ${gv.total} 节</span>
+      <span style="font-size:11px;color:var(--success);">文档 ${doc}</span>
+      <span style="font-size:11px;color:var(--partial);">范画 ${fan}</span>
+      <div style="flex:1;height:5px;background:var(--border);border-radius:3px;min-width:80px;">
+        <div style="height:100%;background:var(--accent);border-radius:3px;width:${rate}%"></div>
+      </div>
+      <span style="font-size:13px;font-weight:700;min-width:40px;text-align:right;">${rate}%</span>
+      <button onclick="switchTab('teachers');setTimeout(()=>{document.getElementById('teacherDistrictF').value='${district}';renderTeacherTable();},150)"
+        style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:none;cursor:pointer;font-size:11px;color:var(--accent2);">查看老师</button>
+    </div>`;
+  }).join('');
+
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function closeDistrictDrill() {
+  activeDrillDistrict = null;
+  document.getElementById('districtDrillPanel').style.display = 'none';
+  renderDistrictTable();
+}
+
+// ════ BACKUP TABLE ════
+function renderBackupTable() {
+  filterBackupTable();
+}
+
+function filterBackupTable() {
+  if (!DATA) return;
+  const q  = (document.getElementById('backupSearch')?.value||'').toLowerCase();
+  const df = document.getElementById('backupDistrictF')?.value||'';
+  const sf = document.getElementById('backupStatusF')?.value||'';
+
+  let list = allTeachers;
+  if (q)  list = list.filter(t => t.name.toLowerCase().includes(q) || (t.course||'').toLowerCase().includes(q));
+  if (df) list = list.filter(t => t.district === df);
+  if (sf) list = list.filter(t => t.status === sf);
+
+  document.getElementById('backupCount').textContent = `${list.length} 条`;
+  document.getElementById('backupBody').innerHTML = list.map((t,i) => `
+    <tr>
+      <td style="color:var(--text3);">${i+1}</td>
+      <td class="td-name">${t.name}</td>
+      <td style="color:var(--text2);">${t.district||'—'}</td>
+      <td style="color:var(--text3);font-size:11px;">${t.group||'—'}</td>
+      <td>${t.course||'—'}</td>
+      <td style="color:var(--text3);font-size:11px;">${t.date||'—'}</td>
+      <td>${t.has_doc ? '<span class="icon-ok">✓</span>' : '<span class="icon-x">✗</span>'}</td>
+      <td>${t.has_fanhua ? '<span class="icon-ok">✓</span>' : '<span class="icon-x">✗</span>'}</td>
+      <td>${t.ai_score!=null ? `<span style="font-weight:700;color:var(--accent2)">${t.ai_score}</span>` : '—'}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td style="color:var(--text3);font-size:11px;">${t.submit_time||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text3);">无数据</td></tr>';
+}
+
+// ════ EDIT MODE (teacher table) ════
 function toggleEdit() {
   editMode = !editMode;
   document.body.classList.toggle('edit-on', editMode);
@@ -976,7 +1186,9 @@ function toggleEdit() {
   btn.textContent = editMode ? '✅ 退出编辑' : '✏️ 编辑模式';
   btn.style.background = editMode ? 'var(--accent)' : '';
   btn.style.color = editMode ? 'var(--dark)' : '';
-  if (document.getElementById('page-teachers').classList.contains('active')) renderTeacherTable();
+  // Always switch to teacher tab when entering edit mode
+  if (editMode) switchTab('teachers');
+  else renderTeacherTable();
 }
 
 function toggleEdit_field(workId, course, field, currentVal) {
@@ -1006,7 +1218,165 @@ function loadEdits() {
   try { editChanges = JSON.parse(localStorage.getItem('hll_edits')||'{}'); } catch(e) {}
 }
 
-// ════ EXPORT ════
+// ════ REPORT (汇报结论) ════
+function renderReport() {
+  if (!DATA) return;
+  const m   = DATA.meta||{};
+  const ov  = DATA.overall;
+  const total   = ov.total || m.total_records || 0;
+  const exempt  = ov['免检']||0;
+  const need    = total - exempt;
+  const fanhua  = Object.values(DATA.by_course||{}).reduce((s,c)=>s+(c.fanhua_count||0), 0);
+  const doc     = allTeachers.filter(t=>t.has_doc).length;
+  const done    = (ov['已完成']||0)+(ov['迟交完成']||0)+(ov['免检']||0);
+  const fanRate = need ? (fanhua/need*100).toFixed(1) : '0.0';
+  const docRate = need ? (doc/need*100).toFixed(1) : '0.0';
+  const doneRate= total ? (done/total*100).toFixed(1) : '0.0';
+
+  const week = m.week || '本周';
+  document.getElementById('reportTitle').textContent = `画啦啦 备课提交情况汇报 — ${week}`;
+  document.getElementById('reportSubtitle').textContent = `数据来源：飞书多维表格 · 截止周日 23:59 · 共 ${total} 条排课记录`;
+
+  // 整体结论
+  const fanLevel = +fanRate >= 80 ? '优秀' : +fanRate >= 60 ? '良好' : '待提升';
+  const fanColor = +fanRate >= 80 ? 'var(--success)' : +fanRate >= 60 ? 'var(--warning)' : 'var(--danger)';
+
+  const skip = ['-','未知'];
+  const distList = Object.entries(DATA.by_district).filter(([d])=>!skip.includes(d));
+  const topDist  = distList.sort((a,b) => {
+    const fa = allTeachers.filter(t=>t.district===a[0]&&t.has_fanhua).length / (a[1].total||1);
+    const fb = allTeachers.filter(t=>t.district===b[0]&&t.has_fanhua).length / (b[1].total||1);
+    return fb - fa;
+  });
+  const bestDistrict  = topDist[0]?.[0] || '—';
+  const worstDistrict = topDist[topDist.length-1]?.[0] || '—';
+  const bestFan  = topDist[0] ? (allTeachers.filter(t=>t.district===topDist[0][0]&&t.has_fanhua).length / (topDist[0][1].total||1)*100).toFixed(1) : '0.0';
+  const worstFan = topDist[topDist.length-1] ? (allTeachers.filter(t=>t.district===topDist[topDist.length-1][0]&&t.has_fanhua).length / (topDist[topDist.length-1][1].total||1)*100).toFixed(1) : '0.0';
+
+  document.getElementById('reportConclusion').innerHTML = `
+    <p>📅 <strong>${week}</strong>，全校共排课 <strong>${total.toLocaleString()}</strong> 节，免检 ${exempt} 节，应提交 <strong>${need.toLocaleString()}</strong> 节。</p>
+    <p>📷 范画提交率：<strong style="color:${fanColor}">${fanRate}%</strong>（${fanhua}/${need}），整体处于 <strong style="color:${fanColor}">${fanLevel}</strong> 水平。</p>
+    <p>📄 备课文档提交率：<strong>${docRate}%</strong>（${doc}/${need}）。</p>
+    <p>✅ 双项完成率（文档+范画均提交）：<strong>${doneRate}%</strong>（${done}/${total}）。</p>
+    <br>
+    <p>🏆 本周范画提交率最高学区：<strong style="color:var(--success)">${bestDistrict}</strong>（${bestFan}%）</p>
+    <p>⚠️  本周范画提交率最低学区：<strong style="color:var(--danger)">${worstDistrict}</strong>（${worstFan}%），需重点关注。</p>`;
+
+  // 对比表格
+  const colorCell = (rate) => {
+    const r = parseFloat(rate);
+    if (r >= 80) return 'background:#E8F5EE;color:#2E7D52;font-weight:700;';
+    if (r >= 50) return 'background:#FFF8E1;color:#B07D00;font-weight:700;';
+    return 'background:#FEECEC;color:#C0392B;font-weight:700;';
+  };
+
+  const totalFan = fanhua, totalDoc = doc, totalDone = done;
+  const totalFanRate = fanRate, totalDocRate = docRate, totalDoneRate = doneRate;
+
+  document.getElementById('reportTableBody').innerHTML = topDist.map(([d, v]) => {
+    const dFan  = allTeachers.filter(t=>t.district===d&&t.has_fanhua).length;
+    const dDoc  = allTeachers.filter(t=>t.district===d&&t.has_doc).length;
+    const dDone = (v['已完成']||0)+(v['迟交完成']||0)+(v['免检']||0);
+    const dNeed = v.total - (v['免检']||0);
+    const dFanR  = dNeed ? (dFan/dNeed*100).toFixed(1) : '0.0';
+    const dDocR  = dNeed ? (dDoc/dNeed*100).toFixed(1) : '0.0';
+    const dDoneR = v.total ? (dDone/v.total*100).toFixed(1) : '0.0';
+    const dScored = allTeachers.filter(t=>t.district===d&&t.ai_score!=null&&t.ai_score>0);
+    const qualRate = dScored.length ? (dScored.filter(t=>t.ai_score>=3).length/dScored.length*100).toFixed(1)+'%' : '—';
+    const exclRate = dScored.length ? (dScored.filter(t=>t.ai_score>=4.5).length/dScored.length*100).toFixed(1)+'%' : '—';
+    const verdict = +dFanR >= 80 ? '✅ 优秀' : +dFanR >= 50 ? '⚠️ 良好' : '❗ 待提升';
+    return `<tr>
+      <td class="td-name">${d}</td>
+      <td>${v.total}</td>
+      <td>${dFan}</td>
+      <td style="${colorCell(dFanR)}">${dFanR}%</td>
+      <td>${dDoc}</td>
+      <td style="${colorCell(dDocR)}">${dDocR}%</td>
+      <td>${dDone}</td>
+      <td style="${colorCell(dDoneR)}">${dDoneR}%</td>
+      <td>${qualRate}</td>
+      <td>${exclRate}</td>
+      <td style="font-weight:700;">${verdict}</td>
+    </tr>`;
+  }).join('');
+
+  // 汇总行
+  document.getElementById('reportTableFoot').innerHTML = `<tr style="background:var(--accent);font-weight:700;">
+    <td>全校汇总</td>
+    <td>${total}</td>
+    <td>${totalFan}</td>
+    <td>${totalFanRate}%</td>
+    <td>${totalDoc}</td>
+    <td>${totalDocRate}%</td>
+    <td>${totalDone}</td>
+    <td>${totalDoneRate}%</td>
+    <td>—</td><td>—</td><td>—</td>
+  </tr>`;
+
+  // 各学区情况分析
+  document.getElementById('reportDistrictAnalysis').innerHTML = topDist.map(([d, v]) => {
+    const dFan  = allTeachers.filter(t=>t.district===d&&t.has_fanhua).length;
+    const dNeed = v.total - (v['免检']||0);
+    const dFanR = dNeed ? (dFan/dNeed*100).toFixed(1) : '0.0';
+    const color = +dFanR >= 80 ? 'var(--success)' : +dFanR >= 50 ? 'var(--warning)' : 'var(--danger)';
+    const desc  = +dFanR >= 80
+      ? `范画提交率 <strong style="color:${color}">${dFanR}%</strong>，整体表现优秀，继续保持。`
+      : +dFanR >= 50
+      ? `范画提交率 <strong style="color:${color}">${dFanR}%</strong>，有待提升，建议加强督导。`
+      : `范画提交率 <strong style="color:${color}">${dFanR}%</strong>，明显低于平均水平，需要学区经理重点跟进。`;
+    return `<p>• <strong>${d}</strong>：${desc}</p>`;
+  }).join('');
+
+  // 行动建议
+  const lowDistricts = topDist.filter(([d,v]) => {
+    const dFan = allTeachers.filter(t=>t.district===d&&t.has_fanhua).length;
+    const dNeed = v.total-(v['免检']||0);
+    return dNeed && (dFan/dNeed*100) < 50;
+  }).map(([d])=>d);
+
+  document.getElementById('reportActions').innerHTML = `
+    <p>1️⃣ <strong>整体要求</strong>：所有学区范画提交率目标 ≥ 80%，备课文档提交率目标 ≥ 90%。</p>
+    ${lowDistricts.length ? `<p>2️⃣ <strong>重点督导</strong>：<span style="color:var(--danger)">${lowDistricts.join('、')}</span> 提交率偏低，请学区经理本周内逐一电话确认原因并给出整改计划。</p>` : '<p>2️⃣ <strong>整体良好</strong>：各学区提交率均在合理区间，保持现有节奏。</p>'}
+    <p>3️⃣ <strong>质量提升</strong>：有范画提交的老师中，鼓励提升范画质量，目标 AI 评分 ≥ 4.5（优秀）比例达到 20% 以上。</p>
+    <p>4️⃣ <strong>下周计划</strong>：周五前完成本周备课，周日 23:59 前提交，迟交超过 3 次将纳入月度绩效考核。</p>
+    <p>5️⃣ <strong>数据更新</strong>：下周数据更新后，本报告自动刷新，可直接发送链接给各学区经理查阅。</p>`;
+
+  // 课程明细
+  document.getElementById('reportCourseBody').innerHTML = Object.entries(DATA.by_course||{})
+    .filter(([c])=>c!=='未知课程')
+    .sort((a,b)=>b[1].total-a[1].total)
+    .map(([c,cv]) => {
+      const exempt = (cv.teachers||[]).filter(t=>t.status==='免检').length;
+      const need = cv.total - exempt;
+      const fan = cv.fanhua_count||0;
+      const docN = (cv.teachers||[]).filter(t=>t.has_doc).length;
+      const done = cv['已完成']||0;
+      const fanR = need ? (fan/need*100).toFixed(1) : '0.0';
+      const docR = need ? (docN/need*100).toFixed(1) : '0.0';
+      return `<tr>
+        <td class="td-name">${c}</td>
+        <td>${cv.total}</td>
+        <td>${fan}</td>
+        <td style="${colorCell(fanR)}">${fanR}%</td>
+        <td>${docN}</td>
+        <td style="${colorCell(docR)}">${docR}%</td>
+        <td>${done}</td>
+      </tr>`;
+    }).join('');
+}
+
+// ════ MODAL ════
+function openModal(src) {
+  document.getElementById('modalImg').src = src;
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+  document.getElementById('modalImg').src = '';
+}
+
+// ════ BOOT ════
+document.addEventListener('DOMContentLoaded', loadData);
 function exportData() {
   if (!DATA) return alert('数据未加载');
   const wb = XLSX.utils.book_new();
@@ -1081,3 +1451,5 @@ document.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
+
+
