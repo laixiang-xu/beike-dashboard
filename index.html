@@ -439,16 +439,17 @@ tr.edited { background: #fef3c7 !important; }
       <option value="monthly">🗓️ 月报</option>
       <option value="quarterly">📊 季度报</option>
     </select>
+    <button class="btn" onclick="syncReportToMarkdown()">🔄 同步修改到汇报稿</button>
     <button class="btn" onclick="exportReportMarkdown()">📋 导出汇报稿</button>
     <button class="btn" onclick="window.print()">🖨️ 打印 / 导出 PDF</button>
     <span style="font-size:12px;color:var(--gray-500);">
-      💡 自动生成结论先行 + 关键指标 + 趋势对比 + 异常归因 + 数据明细的汇报稿，可直接转发学区经理/大区负责人。
+      💡 「核心结论」「异常归因」可直接点击编辑；编辑后点击「同步修改到汇报稿」更新下方 Markdown，再导出转发。
     </span>
   </div>
 
   <div class="panel" id="reportCore">
-    <div class="panel-header">🎯 核心结论（结论先行）</div>
-    <div class="panel-body" id="reportConclusion" style="font-size:14px;line-height:1.9;"></div>
+    <div class="panel-header">🎯 核心结论（结论先行）<span style="font-size:12px;color:var(--gray-500);font-weight:normal;margin-left:8px;">✏️ 点击文字可直接编辑</span></div>
+    <div class="panel-body" id="reportConclusion" contenteditable="true" style="font-size:14px;line-height:1.9;outline:none;min-height:60px;border:1px dashed transparent;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'"></div>
   </div>
 
   <div class="chart-row">
@@ -463,8 +464,8 @@ tr.edited { background: #fef3c7 !important; }
   </div>
 
   <div class="panel">
-    <div class="panel-header">⚠️ 异常归因（自动识别）</div>
-    <div class="panel-body" id="reportIssues" style="font-size:13px;line-height:1.8;"></div>
+    <div class="panel-header">⚠️ 异常归因（自动识别）<span style="font-size:12px;color:var(--gray-500);font-weight:normal;margin-left:8px;">✏️ 点击文字可直接编辑</span></div>
+    <div class="panel-body" id="reportIssues" contenteditable="true" style="font-size:13px;line-height:1.8;outline:none;min-height:60px;border:1px dashed transparent;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='transparent'"></div>
   </div>
 
   <div class="panel">
@@ -496,9 +497,9 @@ tr.edited { background: #fef3c7 !important; }
   </div>
 
   <div class="panel">
-    <div class="panel-header">📝 完整汇报稿（可复制）</div>
+    <div class="panel-header">📝 完整汇报稿（可复制 / 可直接编辑）</div>
     <div class="panel-body">
-      <textarea id="reportMarkdown" readonly style="width:100%;min-height:300px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;padding:12px;border:1px solid var(--gray-300);border-radius:6px;background:#fafbfc;"></textarea>
+      <textarea id="reportMarkdown" style="width:100%;min-height:300px;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.6;padding:12px;border:1px solid var(--gray-300);border-radius:6px;background:#fafbfc;resize:vertical;"></textarea>
     </div>
   </div>
 </div><!-- /tab-report -->
@@ -1760,6 +1761,66 @@ function renderReport() {
   md += `\n---\n*本报告由备课检查系统自动生成*\n`;
 
   document.getElementById('reportMarkdown').value = md;
+}
+
+// 把 contenteditable 区域的 HTML 简单转换为 Markdown，用于同步到汇报稿
+function htmlToMarkdown(html) {
+  let md = html;
+  // 移除 style 属性
+  md = md.replace(/ style="[^"]*"/g, '');
+  // 转换 strong / b
+  md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
+  md = md.replace(/<b>(.*?)<\/b>/gi, '**$1**');
+  // 转换 br
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+  // 转换 div：闭合处换行
+  md = md.replace(/<\/div>/gi, '\n');
+  md = md.replace(/<div>/gi, '');
+  // 转换 li
+  md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
+  // 移除 ul / 其他标签
+  md = md.replace(/<\/?ul>/gi, '');
+  md = md.replace(/<[^>]+>/g, '');
+  // 解码 HTML 实体
+  const txt = document.createElement('textarea');
+  txt.innerHTML = md;
+  md = txt.value;
+  // 合并多余空行
+  md = md.replace(/\n\s*\n\s*\n/g, '\n\n');
+  return md.trim();
+}
+
+// 把用户在「核心结论」「异常归因」里编辑的内容同步到 Markdown 汇报稿
+function syncReportToMarkdown() {
+  const mdEl = document.getElementById('reportMarkdown');
+  const conclusionEl = document.getElementById('reportConclusion');
+  const issuesEl = document.getElementById('reportIssues');
+  if (!mdEl || !conclusionEl || !issuesEl) return;
+
+  let md = mdEl.value;
+  const conclusionMd = htmlToMarkdown(conclusionEl.innerHTML);
+  const issuesMd = htmlToMarkdown(issuesEl.innerHTML);
+
+  // 替换核心结论：## 🎯 核心结论 与 ## 📊 关键指标 之间
+  md = md.replace(
+    /(## 🎯 核心结论\n\n)([\s\S]*?)(\n## 📊 关键指标)/,
+    '$1' + conclusionMd + '$3'
+  );
+
+  // 替换异常归因：## ⚠️ 异常归因 与 ## 📊 学区明细 之间
+  md = md.replace(
+    /(## ⚠️ 异常归因\n\n)([\s\S]*?)(\n## 📊 学区明细)/,
+    '$1' + issuesMd + '$3'
+  );
+
+  mdEl.value = md;
+  // 给出轻微反馈
+  const btn = document.activeElement;
+  const originalText = btn ? btn.textContent : '';
+  if (btn && originalText) {
+    btn.textContent = '✅ 已同步';
+    setTimeout(() => btn.textContent = originalText, 1200);
+  }
 }
 
 function exportReportMarkdown() {
