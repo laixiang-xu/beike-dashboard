@@ -1,0 +1,23 @@
+{
+  "quarters": [
+    {
+      "period": "2026-Q3",
+      "label": "2026年第3季度",
+      "month_count": 1,
+      "months": [
+        "2026-07"
+      ],
+      "total": 1403,
+      "exempt": 0,
+      "need": 1403,
+      "fanhua": 12,
+      "fanhua_rate": "0.9%",
+      "doc": 0,
+      "doc_rate": "0.0%",
+      "fanhua_qualified": 12,
+      "fanhua_qualified_rate": "100.0%",
+      "fanhua_excellent": 0,
+      "fanhua_excellent_rate": "0.0%"
+    }
+  ]
+}

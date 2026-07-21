@@ -393,10 +393,10 @@ tr.edited { background: #fef3c7 !important; }
     <select id="trendPeriod" onchange="renderTrendChart()">
       <option value="weekly">按周累计</option>
       <option value="monthly">按月累计</option>
-      <option value="yearly">按年累计</option>
+      <option value="yearly">按季度累计</option>
     </select>
     <span style="font-size:12px;color:var(--gray-500);">
-      💡 上传多周数据后，此处展示周/月/年备课率变化趋势。当前为单周演示数据。
+      💡 系统会在你每次运行 run.bat 后自动累加历史数据，支持月报、季报、半年报、年报趋势。
     </span>
   </div>
 
@@ -422,7 +422,7 @@ tr.edited { background: #fef3c7 !important; }
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>周期</th><th>总排课</th><th>应提交</th><th>范画提交</th><th>范画率</th><th>文档提交</th><th>文档率</th><th>双项完成</th><th>双项率</th></tr>
+            <tr><th>周期</th><th>总排课</th><th>应提交</th><th>范画提交/率</th><th>文档提交/率</th><th>合格率</th><th>优秀率</th><th>含周数</th><th>学区数</th></tr>
           </thead>
           <tbody id="trendTableBody"></tbody>
         </table>
@@ -799,7 +799,12 @@ const artImages = {
 // 范画AI评分数据（由JSON加载或上传Excel填充）
 let fanhuaScores = [];
 
-// 累计趋势模拟数据（单周演示，上传多周后自动累计）
+// 多周期历史趋势数据（由 trend-*.json 加载）
+let trendWeeksData = { weeks: [] };
+let trendMonthsData = { months: [] };
+let trendQuartersData = { quarters: [] };
+
+// 累计趋势模拟数据（向后兼容保留）
 let trendData = [
   {period:"6月第三周 (6.15-6.21)", total:1562, need:1465, fanhua:13, doc:2, both:2}
 ];
@@ -812,6 +817,8 @@ let selectedCourse = null;
 document.addEventListener('DOMContentLoaded', async () => {
   // 先尝试从localStorage恢复
   loadFromStorage();
+  // 并行加载历史趋势文件
+  await Promise.all([loadTrendWeeks(), loadTrendMonths(), loadTrendQuarters()]);
   // 再尝试从JSON加载（会覆盖localStorage数据）
   const jsonLoaded = await loadJSONData();
   if (jsonLoaded) {
@@ -828,6 +835,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupDragDrop();
   populateFilters();
 });
+
+// ====== 加载历史趋势文件 ======
+async function loadTrendWeeks() {
+  try {
+    const r = await fetch('data/trend-weeks.json?_=' + Date.now());
+    if (r.ok) trendWeeksData = await r.json();
+  } catch(e) { /* 静默失败 */ }
+}
+async function loadTrendMonths() {
+  try {
+    const r = await fetch('data/trend-months.json?_=' + Date.now());
+    if (r.ok) trendMonthsData = await r.json();
+  } catch(e) { /* 静默失败 */ }
+}
+async function loadTrendQuarters() {
+  try {
+    const r = await fetch('data/trend-quarters.json?_=' + Date.now());
+    if (r.ok) trendQuartersData = await r.json();
+  } catch(e) { /* 静默失败 */ }
+}
 
 // ====== 本地存储 ======
 function saveToStorage() {
@@ -1252,18 +1279,29 @@ function renderCourseChart() {
 function renderTrendChart() {
   const period = document.getElementById('trendPeriod')?.value || 'weekly';
 
-  // 模拟多周数据用于演示趋势
-  let labels, fanhuaData, docData;
-  if (trendData.length <= 1 && period === 'weekly') {
-    // 单周演示：生成模拟历史数据
-    labels = ['6月第一周','6月第二周','6月第三周'];
-    fanhuaData = [0, 0, 13];
-    docData = [0, 0, 2];
-  } else {
-    labels = trendData.map(d => d.period);
-    fanhuaData = trendData.map(d => d.fanhua);
-    docData = trendData.map(d => d.doc);
+  // 优先从 trend-*.json 加载历史聚合数据
+  let sourceData = [];
+  let sourceLabel = '';
+  if (period === 'weekly' && typeof trendWeeksData !== 'undefined' && trendWeeksData.weeks) {
+    sourceData = trendWeeksData.weeks.slice().sort((a,b)=>a.period.localeCompare(b.period));
+    sourceLabel = '周';
+  } else if (period === 'monthly' && typeof trendMonthsData !== 'undefined' && trendMonthsData.months) {
+    sourceData = trendMonthsData.months.slice().sort((a,b)=>a.period.localeCompare(b.period));
+    sourceLabel = '月';
+  } else if (period === 'yearly' && typeof trendQuartersData !== 'undefined' && trendQuartersData.quarters) {
+    sourceData = trendQuartersData.quarters.slice().sort((a,b)=>a.period.localeCompare(b.period));
+    sourceLabel = '季度';
   }
+
+  // 如果 trend-*.json 没有数据，回退到内存中的 trendData
+  if (sourceData.length === 0 && trendData.length > 0) {
+    sourceData = trendData;
+  }
+
+  // 趋势图
+  const labels = sourceData.map(d => d.label || d.period);
+  const fanhuaData = sourceData.map(d => d.fanhua || 0);
+  const docData = sourceData.map(d => d.doc || 0);
 
   const ctx = document.getElementById('chartTrend');
   if (chartTrendInst) chartTrendInst.destroy();
@@ -1272,72 +1310,100 @@ function renderTrendChart() {
     data: {
       labels,
       datasets: [
-        { label:'范画提交率', data:fanhuaData.map((v,i) => trendData[0] ? (v/trendData[0].need*100).toFixed(1) : 0),
+        { label:'范画提交数', data:fanhuaData,
           borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', fill:true, tension:.3, pointRadius:5 },
-        { label:'文档提交率', data:docData.map((v,i) => trendData[0] ? (v/trendData[0].need*100).toFixed(1) : 0),
+        { label:'文档提交数', data:docData,
           borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.1)', fill:true, tension:.3, pointRadius:5 }
       ]
     },
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom' } },
-      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'提交率 %' }, max:100 } }
+      plugins:{
+        legend:{ position:'bottom' },
+        title:{ display:true, text: sourceData.length>0 ? `按${sourceLabel}累计趋势（共${sourceData.length}期）` : '暂无历史数据' }
+      },
+      scales:{ y:{ beginAtZero:true, title:{ display:true, text:'提交数' } } }
     }
   });
 
-  // 学区趋势
+  // 学区趋势（取每个数据点第一个学区作为示例，实际取累计聚合）
   const ctx2 = document.getElementById('chartDistrictTrend');
   if (chartDistrictTrendInst) chartDistrictTrendInst.destroy();
+
+  // 提取所有学区名称
+  const allDistricts = new Set();
+  sourceData.forEach(d => (d.by_district||[]).forEach(bd => allDistricts.add(bd.name)));
+  const districtList = Array.from(allDistricts).filter(d=>d && d!=='未分配').slice(0,6);
+
+  const districtDatasets = districtList.map((dn, idx) => {
+    const colors = ['#2563eb','#f59e0b','#16a34a','#dc2626','#7c3aed','#0891b2'];
+    return {
+      label: dn,
+      data: sourceData.map(d => {
+        const bd = (d.by_district||[]).find(x => x.name === dn);
+        if (!bd) return 0;
+        const rate = parseFloat(bd.fanhua_rate) || 0;
+        return rate.toFixed(1);
+      }),
+      borderColor: colors[idx % colors.length],
+      backgroundColor: colors[idx % colors.length] + '20',
+      tension:.3
+    };
+  });
+
   chartDistrictTrendInst = new Chart(ctx2, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label:'教学一区', data:[0,0,1.8], borderColor:'#2563eb', tension:.3 },
-        { label:'教学二区', data:[0,0,0.2], borderColor:'#f59e0b', tension:.3 },
-        { label:'教学三区', data:[0,0,1.0], borderColor:'#16a34a', tension:.3 },
-        { label:'C区', data:[0,0,0.6], borderColor:'#dc2626', tension:.3 },
-      ]
-    },
+    data: { labels, datasets: districtDatasets },
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'范画提交率 %' } },
-      scales:{ y:{ beginAtZero:true, max:10 } }
+      plugins:{ legend:{ position:'bottom' }, title:{ display:true, text:'各学区范画提交率 %' } },
+      scales:{ y:{ beginAtZero:true, max:100 } }
     }
   });
 
-  // 课程趋势
+  // 课程趋势（最新一期数据）
+  const latest = sourceData[sourceData.length-1] || {};
+  const courseData = latest.courses || [];
   const ctx3 = document.getElementById('chartCourseTrend');
   if (chartCourseTrendInst) chartCourseTrendInst.destroy();
   chartCourseTrendInst = new Chart(ctx3, {
     type: 'bar',
     data: {
-      labels: courses.map(c => c.name.length>6 ? c.name.slice(0,6)+'…' : c.name),
+      labels: courseData.map(c => c.name && c.name.length>6 ? c.name.slice(0,6)+'…' : (c.name||'未分配')),
       datasets: [
-        { label:'范画提交率 %', data:courses.map(c => c.submit>0 ? (c.art/c.submit*100).toFixed(1) : 0),
-          backgroundColor: courses.map(c => c.art>0 ? '#16a34a' : '#e5e7eb'), borderRadius:6 }
+        { label:'范画提交率 %', data:courseData.map(c => c.submit>0 ? (c.art/c.submit*100).toFixed(1) : 0),
+          backgroundColor: courseData.map(c => c.art>0 ? '#16a34a' : '#e5e7eb'), borderRadius:6 }
       ]
     },
     options: {
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false } },
+      plugins:{ legend:{ display:false }, title:{ display:true, text:`最新一期课程数据（${latest.label||''}）` } },
       scales:{ y:{ beginAtZero:true, title:{ display:true, text:'%' } } }
     }
   });
 
   // 趋势表
   const tbody = document.getElementById('trendTableBody');
-  const allData = trendData.length > 1 ? trendData : [
-    {period:'6月第一周 (6.1-6.7)', total:1562, need:1465, fanhua:0, doc:0, both:0},
-    {period:'6月第二周 (6.8-6.14)', total:1562, need:1465, fanhua:0, doc:0, both:0},
-    ...trendData
-  ];
-  tbody.innerHTML = allData.map(d => {
-    const fr = d.need>0 ? (d.fanhua/d.need*100).toFixed(1) : '0.0';
-    const dr = d.need>0 ? (d.doc/d.need*100).toFixed(1) : '0.0';
-    const br = d.need>0 ? (d.both/d.need*100).toFixed(1) : '0.0';
-    return `<tr><td>${d.period}</td><td>${d.total}</td><td>${d.need}</td>
-      <td>${d.fanhua}</td><td>${fr}%</td><td>${d.doc}</td><td>${dr}%</td><td>${d.both}</td><td>${br}%</td></tr>`;
+  if (sourceData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--gray-500);padding:32px;">📊 暂无历史趋势数据<br><small style="color:var(--gray-400);">系统会在你每周运行 run.bat 后自动累计趋势</small></td></tr>';
+    return;
+  }
+  tbody.innerHTML = sourceData.slice().reverse().map(d => {
+    const fr = d.fanhua_rate || '0.0%';
+    const dr = d.doc_rate || '0.0%';
+    const fq = d.fanhua_qualified_rate || '-';
+    const fe = d.fanhua_excellent_rate || '-';
+    return `<tr>
+      <td><strong>${d.label || d.period}</strong><br><small style="color:var(--gray-500);">${d.period}</small></td>
+      <td>${d.total || 0}</td>
+      <td>${d.need || 0}</td>
+      <td>${d.fanhua || 0} / <span style="color:var(--success);">${fr}</span></td>
+      <td>${d.doc || 0} / <span style="color:var(--primary);">${dr}</span></td>
+      <td>${fq}</td>
+      <td>${fe}</td>
+      <td>${d.week_count || '-'}</td>
+      <td>${d.by_district ? d.by_district.length + '学区' : '-'}</td>
+    </tr>`;
   }).join('');
 }
 

@@ -1,0 +1,151 @@
+{
+  "months": [
+    {
+      "period": "2026-07",
+      "label": "2026年7月",
+      "week_count": 1,
+      "weeks": [
+        "2026-07-20"
+      ],
+      "total": 1403,
+      "exempt": 0,
+      "need": 1403,
+      "fanhua": 12,
+      "fanhua_rate": "0.9%",
+      "doc": 0,
+      "doc_rate": "0.0%",
+      "fanhua_qualified": 12,
+      "fanhua_qualified_rate": "100.0%",
+      "fanhua_excellent": 0,
+      "fanhua_excellent_rate": "0.0%",
+      "by_district": [
+        {
+          "name": "-",
+          "total": 1,
+          "exempt": 0,
+          "need": 1,
+          "fanhua_submitted": 0,
+          "fanhua_rate": "0.0%",
+          "doc_submitted": 0,
+          "doc_rate": "0.0%"
+        },
+        {
+          "name": "C区",
+          "total": 175,
+          "exempt": 0,
+          "need": 175,
+          "fanhua_submitted": 0,
+          "fanhua_rate": "0.0%",
+          "doc_submitted": 0,
+          "doc_rate": "0.0%"
+        },
+        {
+          "name": "DEMO特战队",
+          "total": 21,
+          "exempt": 0,
+          "need": 21,
+          "fanhua_submitted": 0,
+          "fanhua_rate": "0.0%",
+          "doc_submitted": 0,
+          "doc_rate": "0.0%"
+        },
+        {
+          "name": "教学一区",
+          "total": 378,
+          "exempt": 0,
+          "need": 378,
+          "fanhua_submitted": 10,
+          "fanhua_rate": "2.6%",
+          "doc_submitted": 0,
+          "doc_rate": "0.0%"
+        },
+        {
+          "name": "教学三区",
+          "total": 378,
+          "exempt": 0,
+          "need": 378,
+          "fanhua_submitted": 1,
+          "fanhua_rate": "0.3%",
+          "doc_submitted": 0,
+          "doc_rate": "0.0%"
+        },
+        {
+          "name": "教学二区",
+          "total": 450,
+          "exempt": 0,
+          "need": 450,
+          "fanhua_submitted": 1,
+          "fanhua_rate": "0.2%",
+          "doc_submitted": 0,
+          "doc_rate": "0.0%"
+        }
+      ],
+      "courses": [
+        {
+          "name": "《副本大冒险-上》",
+          "total": 80,
+          "exempt": 0,
+          "submit": 80,
+          "doc": 0,
+          "art": 0
+        },
+        {
+          "name": "《塔楼建筑》",
+          "total": 213,
+          "exempt": 0,
+          "submit": 213,
+          "doc": 0,
+          "art": 2
+        },
+        {
+          "name": "《家楼下的树与街》",
+          "total": 106,
+          "exempt": 0,
+          "submit": 106,
+          "doc": 0,
+          "art": 0
+        },
+        {
+          "name": "《愿望流星》",
+          "total": 226,
+          "exempt": 0,
+          "submit": 226,
+          "doc": 0,
+          "art": 6
+        },
+        {
+          "name": "《我的穿越之旅-起源篇-下》",
+          "total": 158,
+          "exempt": 0,
+          "submit": 158,
+          "doc": 0,
+          "art": 0
+        },
+        {
+          "name": "《模拟校园-同学你好》",
+          "total": 212,
+          "exempt": 0,
+          "submit": 212,
+          "doc": 0,
+          "art": 1
+        },
+        {
+          "name": "《色彩王国之旅》",
+          "total": 192,
+          "exempt": 0,
+          "submit": 192,
+          "doc": 0,
+          "art": 3
+        },
+        {
+          "name": "《质感—岁月的痕迹》",
+          "total": 216,
+          "exempt": 0,
+          "submit": 216,
+          "doc": 0,
+          "art": 0
+        }
+      ]
+    }
+  ]
+}
