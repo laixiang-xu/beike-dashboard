@@ -1,0 +1,43 @@
+name: 每周自动更新备课数据
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'  # 每周一 UTC 01:00 = 北京时间 09:00
+  workflow_dispatch:       # 也可以在 GitHub 页面手动触发
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: pip install requests
+
+      - name: 拉取飞书数据
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+        run: python scripts/analyze_feishu_v2.py
+
+      - name: 下载范画图片
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+        run: python scripts/inject_urls.py
+
+      - name: 推送更新到 GitHub
+        run: |
+          git config --global user.email "auto-update@github-actions.com"
+          git config --global user.name "Auto Update Bot"
+          git add new-dashboard/dashboard_data.json
+          git add new-dashboard/fanhua_images/ || true
+          git diff --staged --quiet && echo "数据无变化，跳过提交" || git commit -m "Auto update: $(date '+%Y-%m-%d %H:%M') UTC"
+          git push
