@@ -5,6 +5,9 @@ on:
     - cron: '0 1 * * 1'  # 每周一 UTC 01:00 = 北京时间 09:00
   workflow_dispatch:       # 也可以在 GitHub 页面手动触发
 
+permissions:
+  contents: write          # 允许 Actions 写入仓库
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -12,6 +15,8 @@ jobs:
     steps:
       - name: 拉取代码
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 安装 Python
         uses: actions/setup-python@v5
