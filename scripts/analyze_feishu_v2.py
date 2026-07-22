@@ -213,7 +213,7 @@ if __name__ == "__main__":
         d_rate = d_done / data["total"] * 100 if data["total"] else 0
         print(f"  {d}: {d_rate:.1f}%  ({d_done}/{data['total']})")
 
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "new-dashboard", "dashboard_data.json")
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "new-dashboard", "dashboard_data.json")
     out = os.path.normpath(out)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(stats, f, ensure_ascii=False, indent=2)
