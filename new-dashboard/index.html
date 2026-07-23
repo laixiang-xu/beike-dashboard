@@ -87,24 +87,37 @@ tr.selected td{background:#FFF8E1;}
 @media(max-width:900px){.chart-row{grid-template-columns:1fr;}}
 .chart-box{position:relative;height:260px;}
 .chart-box canvas{width:100%!important;height:100%!important;}
-/* two-col layout for Tab2 */
-.tab2-layout{display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start;}
-@media(max-width:1100px){.tab2-layout{grid-template-columns:1fr;}}
-.tab2-right{position:sticky;top:68px;max-height:calc(100vh - 90px);overflow-y:auto;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);}
-.tab2-right-hd{padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:10;}
-.tab2-right-hd h3{font-size:13px;font-weight:700;}
-.tab2-right-hd .sub{font-size:11px;color:var(--text3);margin-top:2px;}
-.tab2-right-body{padding:14px 16px;}
-/* fanhua grid */
-.fanhua-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-.fc{background:var(--bg);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:all .15s;}
-.fc:hover{box-shadow:var(--shadow-md);}
-.fc img{width:100%;height:140px;object-fit:cover;display:block;}
-.fc-ph{width:100%;height:140px;display:flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--text3);flex-direction:column;gap:4px;font-size:11px;}
-.fc-info{padding:7px 9px;}
-.fc-name{font-size:12px;font-weight:700;}
-.fc-meta{font-size:10px;color:var(--text3);margin-top:2px;}
-.fc-score{float:right;background:var(--accent);color:var(--dark);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;}
+/* Tab2 单列布局 */
+.tab2-layout{display:flex;flex-direction:column;gap:16px;}
+/* 范画展示区 */
+.course-fanhua-panel{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;animation:fadeSlideIn .25s ease;}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.cfp-header{padding:18px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.cfp-title{font-size:16px;font-weight:800;color:var(--dark);letter-spacing:-.3px;}
+.cfp-meta{font-size:12px;color:var(--text3);margin-top:3px;}
+.cfp-stats{display:flex;gap:16px;flex-shrink:0;}
+.cfp-stat{text-align:center;}
+.cfp-stat-val{font-size:18px;font-weight:800;line-height:1;}
+.cfp-stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;}
+.cfp-body{padding:20px 24px 24px;}
+.cfp-section-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px;}
+/* 范画网格 */
+.fanhua-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+@media(max-width:1200px){.fanhua-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:800px){.fanhua-grid{grid-template-columns:repeat(2,1fr);}}
+.fc{background:var(--bg);border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .18s,box-shadow .18s;}
+.fc:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.13);}
+.fc-img-wrap{position:relative;overflow:hidden;background:var(--surface2);}
+.fc img{width:100%;height:220px;object-fit:cover;display:block;transition:transform .3s;}
+.fc:hover img{transform:scale(1.04);}
+.fc-ph{width:100%;height:220px;display:flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--text3);flex-direction:column;gap:6px;font-size:12px;}
+.fc-badge{position:absolute;top:10px;right:10px;background:var(--accent);color:var(--dark);padding:3px 9px;border-radius:12px;font-size:11px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.fc-badge.unq{background:#E05A5A;color:#fff;}
+.fc-badge.good{background:#4CAF7D;color:#fff;}
+.fc-info{padding:12px 14px;}
+.fc-name{font-size:13px;font-weight:700;color:var(--text1);}
+.fc-meta{font-size:11px;color:var(--text3);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;}
+.fc-tag{background:var(--surface2);padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600;color:var(--text2);}
 /* showcase */
 .showcase-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
 .sf-btn{padding:6px 14px;border-radius:16px;font-size:12px;font-weight:600;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text2);font-family:inherit;transition:all .15s;}
@@ -340,11 +353,11 @@ tr.selected td{background:#FFF8E1;}
     <select class="tb-input" id="courseDistrictFilter" onchange="renderCourseTable()">
       <option value="">全部学区</option>
     </select>
-    <span style="font-size:11px;color:var(--text3);margin-left:auto;">点击课程行 → 右侧查看范画</span>
+    <span style="font-size:11px;color:var(--text3);margin-left:auto;">点击课程行查看范画详情</span>
   </div>
 
   <div class="tab2-layout">
-    <!-- 左：课程明细表 -->
+    <!-- 课程明细表 -->
     <div>
       <div class="panel" style="margin-bottom:0;">
         <div class="panel-hd">
@@ -370,24 +383,9 @@ tr.selected td{background:#FFF8E1;}
       </div>
     </div>
 
-    <!-- 右：固定侧栏（老师列表+范画） -->
-    <div class="tab2-right" id="coursePanel">
-      <div class="tab2-right-hd">
-        <h3 id="cpTitle">← 点击左侧课程</h3>
-        <div class="sub" id="cpSub">选择课程后显示老师和范画</div>
-      </div>
-      <div class="tab2-right-body">
-        <!-- 统计行 -->
-        <div id="cpStats" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;font-size:11px;"></div>
-        <!-- 范画缩略图（只显示范画，按评分从高到低） -->
-        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;" id="cpFanhuaLabel"></div>
-        <div class="fanhua-grid" id="cpFanhuaGrid"></div>
-        <div class="empty" id="cpEmpty">
-          <div class="ei">🖼</div>
-          <p>请先点击左侧课程行</p>
-        </div>
-      </div>
-    </div>
+    <!-- 范画展示区（点击课程后出现） -->
+    <div id="coursePanel" style="display:none;"></div>
+
   </div>
 
 </div><!-- /page-courses -->
@@ -918,43 +916,76 @@ function selectCourse(name) {
 function renderCoursePanel() {
   if (!selectedCourse || !DATA) return;
   const d = DATA.by_course[selectedCourse];
-  if (!d) return;
+  const panel = document.getElementById('coursePanel');
+  if (!d) { panel.style.display='none'; return; }
 
-  document.getElementById('cpEmpty').style.display = 'none';
-  document.getElementById('cpTitle').textContent = selectedCourse;
-  const fan = d.fanhua_count||0;
-  const rate = d.total ? (d['已完成']/d.total*100).toFixed(1) : '0.0';
-  document.getElementById('cpSub').textContent = `完成率 ${rate}% · ${d.total}人 · ${fan}张范画`;
-  document.getElementById('cpStats').innerHTML = `
-    <span style="color:var(--success)">✓ 已完成 ${d['已完成']||0}</span>
-    <span style="color:var(--danger)">✗ 未完成 ${d['未完成']||0}</span>
-    <span style="color:var(--partial)">📷 范画 ${fan}</span>`;
+  const fan  = d.fanhua_count || 0;
+  const total = d.total || 0;
+  const done  = d['已完成'] || 0;
+  const undone = (d['未提交'] || 0) + (d['部分提交'] || 0);
+  const rate  = total ? (done / total * 100).toFixed(1) : '0.0';
 
-  // 只展示有范画的，按AI评分从高到低
-  const withFanhua = [...(d.teachers||[])].filter(t=>t.has_fanhua)
-    .sort((a,b) => (b.ai_score??-1)-(a.ai_score??-1));
+  const withFanhua = [...(d.teachers||[])].filter(t => t.has_fanhua)
+    .sort((a,b) => (b.ai_score ?? -1) - (a.ai_score ?? -1));
 
-  const label = document.getElementById('cpFanhuaLabel');
-  const grid  = document.getElementById('cpFanhuaGrid');
-  if (withFanhua.length) {
-    label.textContent = `📷 范画 ${withFanhua.length}张（按评分排序）`;
-    grid.innerHTML = withFanhua.map(t => {
-      const imgH = t.fanhua_url
-        ? `<img src="${t.fanhua_url}" loading="lazy" onclick="openModal('${t.fanhua_url}')" onerror="this.parentElement.innerHTML='<div class=fc-ph><span>🖼</span><span>加载失败</span></div>'">`
-        : `<div class="fc-ph"><span>🖼</span><span>无图片</span></div>`;
-      return `<div class="fc">
-        ${imgH}
-        <div class="fc-info">
-          <span class="fc-name">${t.name}</span>
-          ${t.ai_score!=null ? `<span class="fc-score">${t.ai_score}</span>` : '<span style="font-size:10px;color:var(--text3);float:right;">待评</span>'}
-          <div class="fc-meta">${t.district||''} · ${t.date||''}</div>
+  const cardsHtml = withFanhua.length ? withFanhua.map(t => {
+    const scoreVal = t.ai_score != null ? parseFloat(t.ai_score) : null;
+    const badgeClass = scoreVal == null ? '' : scoreVal >= 4.5 ? 'good' : scoreVal < 3.0 ? 'unq' : '';
+    const badgeText  = scoreVal == null ? '待评分' : scoreVal >= 4.5 ? '优秀 ' + scoreVal : scoreVal < 3.0 ? '不合格 ' + scoreVal : '合格 ' + scoreVal;
+    const imgHtml = t.fanhua_url
+      ? `<img src="${t.fanhua_url}" loading="lazy" onclick="openModal('${t.fanhua_url}')" onerror="this.parentElement.innerHTML='<div class=fc-ph><span style=font-size:28px>🖼</span><span>图片加载失败</span></div>'">`
+      : `<div class="fc-ph"><span style="font-size:28px">🖼</span><span>暂无图片</span></div>`;
+    return `<div class="fc">
+      <div class="fc-img-wrap">
+        ${imgHtml}
+        <div class="fc-badge ${badgeClass}">${badgeText}</div>
+      </div>
+      <div class="fc-info">
+        <div class="fc-name">${t.name}${t.real_name && t.real_name !== t.name ? `<span style="font-weight:400;color:var(--text3);font-size:11px;"> · ${t.real_name}</span>` : ''}</div>
+        <div class="fc-meta">
+          <span class="fc-tag">${t.district || '-'}</span>
+          <span class="fc-tag">${t.date || '-'}</span>
         </div>
-      </div>`;
-    }).join('');
-  } else {
-    label.textContent = '';
-    grid.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:20px 0;text-align:center;">该课程暂无范画提交</div>';
-  }
+      </div>
+    </div>`;
+  }).join('') : `<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text3);">
+    <div style="font-size:32px;margin-bottom:8px;">🖼</div>
+    <div style="font-size:13px;">该课程暂无范画提交</div>
+  </div>`;
+
+  panel.style.display = 'block';
+  panel.innerHTML = `<div class="course-fanhua-panel">
+    <div class="cfp-header">
+      <div>
+        <div class="cfp-title">${selectedCourse}</div>
+        <div class="cfp-meta">共 ${total} 位老师排课 · ${fan} 张范画已提交</div>
+      </div>
+      <div class="cfp-stats">
+        <div class="cfp-stat">
+          <div class="cfp-stat-val" style="color:var(--success)">${done}</div>
+          <div class="cfp-stat-lbl">已完成</div>
+        </div>
+        <div class="cfp-stat">
+          <div class="cfp-stat-val" style="color:var(--danger)">${undone}</div>
+          <div class="cfp-stat-lbl">未完成</div>
+        </div>
+        <div class="cfp-stat">
+          <div class="cfp-stat-val" style="color:var(--accent2)">${rate}%</div>
+          <div class="cfp-stat-lbl">完成率</div>
+        </div>
+        <div class="cfp-stat">
+          <div class="cfp-stat-val" style="color:var(--partial)">${fan}</div>
+          <div class="cfp-stat-lbl">范画数</div>
+        </div>
+      </div>
+    </div>
+    <div class="cfp-body">
+      <div class="cfp-section-title">范画展示 · 按评分排序</div>
+      <div class="fanhua-grid">${cardsHtml}</div>
+    </div>
+  </div>`;
+
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ════ TAB3: TEACHERS ════
