@@ -930,21 +930,22 @@ function renderCoursePanel() {
 
   const cardsHtml = withFanhua.length ? withFanhua.map(t => {
     const scoreVal = t.ai_score != null ? parseFloat(t.ai_score) : null;
-    const badgeClass = scoreVal == null ? '' : scoreVal >= 4.5 ? 'good' : scoreVal < 3.0 ? 'unq' : '';
-    const badgeText  = scoreVal == null ? '待评分' : scoreVal >= 4.5 ? '优秀 ' + scoreVal : scoreVal < 3.0 ? '不合格 ' + scoreVal : '合格 ' + scoreVal;
+    const badgeClass = scoreVal == null ? null : scoreVal >= 4.5 ? 'good' : scoreVal < 3.0 ? 'unq' : '';
+    const badgeText  = scoreVal == null ? null : scoreVal >= 4.5 ? '优秀 ' + scoreVal : scoreVal < 3.0 ? '不合格 ' + scoreVal : '合格 ' + scoreVal;
     const imgHtml = t.fanhua_url
       ? `<img src="${t.fanhua_url}" loading="lazy" onclick="openModal('${t.fanhua_url}')" onerror="this.parentElement.innerHTML='<div class=fc-ph><span style=font-size:28px>🖼</span><span>图片加载失败</span></div>'">`
       : `<div class="fc-ph"><span style="font-size:28px">🖼</span><span>暂无图片</span></div>`;
     return `<div class="fc">
       <div class="fc-img-wrap">
         ${imgHtml}
-        <div class="fc-badge ${badgeClass}">${badgeText}</div>
+        ${badgeText ? `<div class="fc-badge ${badgeClass}">${badgeText}</div>` : ''}
       </div>
       <div class="fc-info">
         <div class="fc-name">${t.name}${t.real_name && t.real_name !== t.name ? `<span style="font-weight:400;color:var(--text3);font-size:11px;"> · ${t.real_name}</span>` : ''}</div>
         <div class="fc-meta">
           <span class="fc-tag">${t.district || '-'}</span>
           <span class="fc-tag">${t.date || '-'}</span>
+          ${scoreVal == null ? '<span class="fc-tag" style="color:var(--text3)">待评分</span>' : ''}
         </div>
       </div>
     </div>`;
